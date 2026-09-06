@@ -151,12 +151,14 @@ node console/index.test.mjs
 
 ## 硬件与开发环境来源
 
+本项目的硬件与开发环境搭建，参考并建立在 [Zhaohan-Wang 老师的 EasyInput 项目体系](https://github.com/Zhaohan-Wang) 之上。下表中的 `easyinput-beatbox` 是老师的公开参考项目；`easyinput-board-cy`、`esp-idf-cy` 和 `easy-input-maker` 用于继续核对硬件事实、搭建开发环境、编译固件并复用已验证的平台层。本项目在此基础上实现 A Band of One 自己的音频、模式、乐谱和网页控制台功能。
+
 | 来源 | 地址 | 参考内容 |
 |---|---|---|
 | `easyinput-board-cy` | [GitHub](https://github.com/CY-CHENYUE/easyinput-board-cy) | EasyInput 板型、GPIO、按键、BOOT、电源、USB、音频事实和安全边界。 |
 | `esp-idf-cy` | [GitHub](https://github.com/CY-CHENYUE/esp-idf-cy) | ESP-IDF 环境检查、固件编译、设备识别；烧录与串口操作必须在确认后执行。 |
 | `easy-input-maker` | [GitHub](https://github.com/CY-CHENYUE/easy-input-maker) | EasyInput Maker 完整固件工程；是本项目复用已验证 GPIO8、按键、旋钮、LED、I2S/音频和分区边界的平台层来源。 |
-| 老师的参考项目 | [easyinput-beatbox](https://github.com/Zhaohan-Wang/easyinput-beatbox) | 参考“先独立出声，再建立时间轴，最后接入网页控制台”的阶段组织方式，不复制其代码。 |
+| 老师的参考项目（来源） | [easyinput-beatbox](https://github.com/Zhaohan-Wang/easyinput-beatbox) | Zhaohan-Wang 老师的公开项目；参考“先独立出声，再建立时间轴，最后接入网页控制台”的阶段组织方式，不复制其代码。 |
 
 ## 软件框架与 API 来源
 
