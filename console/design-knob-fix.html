@@ -1,0 +1,282 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>旋钮修复对比 · 修复前 / 修复后</title>
+  <style>
+    :root {
+      --color-solder-orange: #ff6c2f;
+      --color-signal-white: #ffffff;
+      --color-linen-gray: #e5e7eb;
+      --color-fog: #c2c2c2;
+      --color-ash: #a3a3a3;
+      --color-carbon-black: #000000;
+      --color-deep-charcoal: #191919;
+      --font-suisse-intl: 'Suisse Intl', 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      --font-suisse-mono: 'Suisse Intl Mono', 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      --text-caption: 12px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: var(--color-linen-gray);
+      color: var(--color-carbon-black);
+      font-family: var(--font-suisse-intl);
+      font-size: 16px;
+      line-height: 1.5;
+    }
+
+    .page { max-width: 1180px; margin: 0 auto; padding: 32px 24px 96px; }
+
+    .nav-pill {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      max-width: 720px;
+      margin: 0 auto 40px;
+      padding: 14px 28px;
+      background: var(--color-deep-charcoal);
+      border-radius: 64px;
+      color: var(--color-signal-white);
+    }
+    .brand { font-size: 18px; font-weight: 500; }
+    .nav-links { display: flex; gap: 8px; }
+    .nav-link {
+      padding: 8px 16px;
+      border-radius: 9999px;
+      font-family: var(--font-suisse-mono);
+      font-size: var(--text-caption);
+      opacity: 0.7;
+    }
+    .nav-link.active { opacity: 1; background: rgba(255,255,255,0.12); }
+
+    .compare {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+    }
+    @media (max-width: 900px) { .compare { grid-template-columns: 1fr; } }
+
+    .panel-card {
+      background: var(--color-signal-white);
+      border-radius: 24px;
+      padding: 28px;
+    }
+    .panel-tag {
+      display: inline-block;
+      font-family: var(--font-suisse-mono);
+      font-size: var(--text-caption);
+      letter-spacing: 0.4px;
+      padding: 5px 12px;
+      border-radius: 9999px;
+      margin-bottom: 8px;
+    }
+    .tag-before { background: rgba(255,108,47,0.12); color: var(--color-solder-orange); }
+    .tag-after { background: var(--color-deep-charcoal); color: var(--color-signal-white); }
+    .panel-title { font-size: 18px; font-weight: 500; margin: 6px 0 4px; }
+    .panel-desc { font-size: 14px; color: #6b6b6b; margin: 0 0 20px; min-height: 42px; }
+
+    /* ===== 编码器面板（与正式页一致的容器） ===== */
+    .encoder-panel {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+      padding: 20px;
+      border: 1px solid var(--color-linen-gray);
+      border-radius: 16px;
+    }
+
+    /* ---------- 修复前（复刻当前问题） ---------- */
+    .knob-old {
+      position: relative;
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      border: 1px solid var(--color-carbon-black);
+      background: var(--color-signal-white);
+    }
+    .knob-old .tick {
+      position: absolute;
+      top: 50%; left: 50%;
+      width: 2px; height: 44px;
+      background: var(--color-carbon-black);
+      transform-origin: 50% 0;
+      transform: translate(-50%, 0) rotate(35deg);
+    }
+    .knob-old .center {
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      font-family: var(--font-suisse-mono);
+      font-size: var(--text-caption);
+      color: var(--color-ash);
+    }
+    .knob-old .feedback {
+      position: absolute;
+      left: 50%; bottom: -28px;
+      transform: translateX(-50%);
+      white-space: nowrap;
+      font-family: var(--font-suisse-mono);
+      font-size: var(--text-caption);
+      color: var(--color-ash);
+    }
+    .hints-old {
+      display: flex;
+      gap: 12px;
+      font-family: var(--font-suisse-mono);
+      font-size: var(--text-caption);
+      color: var(--color-ash);
+    }
+    .overlap-note {
+      margin-top: 10px;
+      font-size: 12px;
+      color: var(--color-solder-orange);
+      font-family: var(--font-suisse-mono);
+    }
+
+    /* ---------- 修复后 ---------- */
+    .knob {
+      position: relative;
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      border: 1px solid var(--color-carbon-black);
+      background: var(--color-signal-white);
+    }
+    .knob .tick {
+      position: absolute;
+      top: 50%; left: 50%;
+      width: 2px; height: 16px;
+      background: var(--color-carbon-black);
+      transform-origin: 50% 0;
+      transform: translate(-50%, 0) rotate(35deg) translateY(-52px);
+      transition: transform 0.2s ease;
+    }
+    .knob .center {
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      font-family: var(--font-suisse-mono);
+      font-size: var(--text-caption);
+      color: var(--color-ash);
+    }
+
+    .knob-state {
+      min-height: 18px;
+      font-family: var(--font-suisse-mono);
+      font-size: var(--text-caption);
+      color: var(--color-carbon-black);
+    }
+    .knob-hints {
+      display: flex;
+      gap: 12px;
+      font-family: var(--font-suisse-mono);
+      font-size: 11px;
+      color: var(--color-ash);
+    }
+
+    /* 按压态 */
+    .knob.pressed {
+      background: var(--color-deep-charcoal);
+      border-color: var(--color-deep-charcoal);
+    }
+    .knob.pressed .tick { background: var(--color-signal-white); }
+    .knob.pressed .center { color: var(--color-signal-white); }
+
+    .change-list {
+      margin: 40px auto 0;
+      max-width: 720px;
+      background: var(--color-signal-white);
+      border-radius: 24px;
+      padding: 28px 32px;
+    }
+    .change-list h2 { font-size: 18px; font-weight: 500; margin: 0 0 12px; }
+    .change-list li { margin: 6px 0; font-size: 15px; color: #333; }
+    .change-list code { font-family: var(--font-suisse-mono); font-size: 13px; }
+  </style>
+</head>
+<body>
+  <div class="page">
+
+    <nav class="nav-pill" aria-label="工作区（示意）">
+      <div class="brand">A Band of One</div>
+      <div class="nav-links">
+        <span class="nav-link active">跟谱练习</span>
+        <span class="nav-link">自由演奏</span>
+        <span class="nav-link">乐谱库与导入</span>
+      </div>
+    </nav>
+
+    <div class="compare">
+
+      <!-- 修复前 -->
+      <div class="panel-card">
+        <span class="panel-tag tag-before">修复前</span>
+        <div class="panel-title">当前问题</div>
+        <p class="panel-desc">刻度从圆心穿过 S9；动态状态与静态图例绝对定位重叠。</p>
+        <div class="encoder-panel">
+          <div class="knob-old" aria-label="旋钮">
+            <div class="tick"></div>
+            <div class="center">S9</div>
+            <div class="feedback">按压开始。</div>
+          </div>
+          <div class="hints-old">
+            <span>左旋</span><span>·</span><span>右旋</span><span>·</span><span>按压</span>
+          </div>
+        </div>
+        <div class="overlap-note">↑ 刻度穿字 · 两行文字叠印</div>
+      </div>
+
+      <!-- 修复后 · 常态 -->
+      <div class="panel-card">
+        <span class="panel-tag tag-after">修复后</span>
+        <div class="panel-title">常态（旋转 35°）</div>
+        <p class="panel-desc">刻度贴外圈，S9 完全让出；状态与图例各占一行。</p>
+        <div class="encoder-panel">
+          <div class="knob" aria-label="旋钮">
+            <div class="tick"></div>
+            <div class="center">S9</div>
+          </div>
+          <div class="knob-state">按压开始</div>
+          <div class="knob-hints">
+            <span>左旋</span><span>·</span><span>右旋</span><span>·</span><span>按压</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 修复后 · 按压中 -->
+      <div class="panel-card">
+        <span class="panel-tag tag-after">修复后</span>
+        <div class="panel-title">按压中（S9 按下）</div>
+        <p class="panel-desc">旋钮反白、刻度变白；状态行同步显示"按压"。</p>
+        <div class="encoder-panel">
+          <div class="knob pressed" aria-label="旋钮">
+            <div class="tick"></div>
+            <div class="center">按压</div>
+          </div>
+          <div class="knob-state">按压</div>
+          <div class="knob-hints">
+            <span>左旋</span><span>·</span><span>右旋</span><span>·</span><span>按压</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="change-list">
+      <h2>修复点</h2>
+      <ol>
+        <li><b>刻度贴外圈</b>：<code>tick</code> 从圆心 44px 长针改为 16px 短刻度，外移至距圆心 52px（旋转驱动不变）。</li>
+        <li><b>动态状态独立成行</b>："按压开始 / 按压暂停" 从旋钮内部移出，置于旋钮正下方文档流。</li>
+        <li><b>图例降级</b>："左旋 · 右旋 · 按压" 置于状态行之下，11px 灰色，作为第三层。</li>
+        <li><b>按压态不变</b>：S9 按下仍反白、刻度变白、中心显示"按压"，仅布局归属调整。</li>
+      </ol>
+    </div>
+
+  </div>
+</body>
+</html>

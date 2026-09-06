@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>A Band of One · 单簧管高音源片段 A/B</title>
+  <style>
+    :root { color-scheme:dark; font-family:system-ui,"Microsoft YaHei",sans-serif; background:#101522; color:#edf3ff; }
+    body { max-width:1040px; margin:0 auto; padding:30px 18px 48px; } h1{margin:0 0 8px} p{color:#b8c4d9;line-height:1.7}
+    .notice,.card { border:1px solid #374866; border-radius:14px; background:#171e2d; padding:16px; margin-top:16px; }
+    .notice { border-left:4px solid #eeb94a; background:#201c12; } .cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+    .window { margin-top:12px; border-top:1px solid #32415c; padding-top:10px; } .label{font-weight:800;color:#9be0ff}
+    button { margin:6px 6px 0 0; border:1px solid #6581aa; border-radius:8px; padding:8px 10px; background:#edf5ff; color:#162139; font-weight:700; cursor:pointer; }
+    button.download{background:#b6efc3} button:disabled{opacity:.5;cursor:wait} code{color:#9be0ff} #status{min-height:1.5em;color:#a9e7b8}
+    @media(max-width:760px){.cards{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+  <h1>单簧管高音源片段 A/B</h1>
+  <p>这里直接播放原始 MP3 的 0.8 秒单次片段：不循环、不读取 EIAD。用它判断 D5/F5/A#5 的问题是否来自源片段本身。</p>
+  <p class="notice">先试听每行 A、B1、B2、B3，选出最清晰、最稳定的一段。选中后点击该段“下载 WAV”；浏览器下载完成后，先不要覆盖旧文件，等待下一步放入独立候选目录。</p>
+  <div id="cards" class="cards"></div>
+  <p id="status" role="status">点击“试听”开始；浏览器首次操作会初始化音频。</p>
+
+  <script id="abo-clarinet-high-source-core">
+  (() => {
+    const HIGH_NOTES = ['D5', 'F5', 'A#5'];
+    const WINDOWS = [
+      { id:'a', label:'A · 当前片段', startSeconds:0 },
+      { id:'b1', label:'B1 · 后段候选', startSeconds:1.5 },
+      { id:'b2', label:'B2 · 后段候选', startSeconds:3 },
+      { id:'b3', label:'B3 · 后段候选', startSeconds:4.5 },
+    ];
+    function sliceMono48k(channels, sourceRate, startSeconds, seconds) {
+      const count = Math.round(seconds * 48000), output = new Float32Array(count), start = startSeconds * sourceRate;
+      for (let target = 0; target < count; target += 1) {
+        const source = start + target * sourceRate / 48000, left = Math.min(Math.floor(source), channels[0].length - 1), right = Math.min(left + 1, channels[0].length - 1), fraction = source - left;
+        let mix = 0;
+        for (let channel = 0; channel < channels.length; channel += 1) mix += (channels[channel][left] + (channels[channel][right] - channels[channel][left]) * fraction) / channels.length;
+        output[target] = mix;
+      }
+      return output;
+    }
+    function wav16(samples) {
+      const buffer = new ArrayBuffer(44 + samples.length * 2), view = new DataView(buffer); let offset = 0;
+      function text(value) { for (let index = 0; index < value.length; index += 1) view.setUint8(offset++, value.charCodeAt(index)); }
+      function u16(value) { view.setUint16(offset, value, true); offset += 2; } function u32(value) { view.setUint32(offset, value, true); offset += 4; }
+      text('RIFF'); u32(36 + samples.length * 2); text('WAVEfmt '); u32(16); u16(1); u16(1); u32(48000); u32(96000); u16(2); u16(16); text('data'); u32(samples.length * 2);
+      for (const sample of samples) { const value = Math.max(-1, Math.min(1, sample)); view.setInt16(offset, value < 0 ? Math.round(value * 32768) : Math.round(value * 32767), true); offset += 2; }
+      return buffer;
+    }
+    window.AboClarinetHighSourceCore = { HIGH_NOTES, WINDOWS, sliceMono48k, wav16 };
+  })();
+  </script>
+  <script>
+  (() => {
+    const BASE = '../firmware/course-motherboard/abo_assets/incoming/tonejs-clarinet-probe/';
+    const { HIGH_NOTES, WINDOWS, sliceMono48k, wav16 } = window.AboClarinetHighSourceCore;
+    const cards = document.querySelector('#cards'), status = document.querySelector('#status'); let context, active, cache = new Map();
+    function audioContext() { return context ??= new AudioContext(); }
+    async function decoded(note) {
+      if (!cache.has(note)) cache.set(note, (async () => { const response = await fetch(BASE + note.replace('#', 's') + '.mp3'); if (!response.ok) throw new Error(`${note} MP3 HTTP ${response.status}`); return audioContext().decodeAudioData(await response.arrayBuffer()); })());
+      return cache.get(note);
+    }
+    async function samples(note, window) { const buffer = await decoded(note); return sliceMono48k(Array.from({ length:buffer.numberOfChannels }, (_, index) => buffer.getChannelData(index)), buffer.sampleRate, window.startSeconds, 0.8); }
+    async function play(note, window) {
+      if (active) active.stop(); status.textContent = `正在解码 ${note} ${window.label}…`;
+      const pcm = await samples(note, window), output = audioContext().createBuffer(1, pcm.length, 48000); output.copyToChannel(pcm, 0);
+      active = audioContext().createBufferSource(); active.buffer = output; active.connect(audioContext().destination); active.start(); active.addEventListener('ended', () => { if (active) active = null; });
+      status.textContent = `${note} ${window.label}：原 MP3 单次试听（${window.startSeconds.toFixed(1)}–${(window.startSeconds + 0.8).toFixed(1)} 秒）。`;
+    }
+    async function download(note, window) {
+      status.textContent = `正在导出 ${note} ${window.label}…`; const blob = new Blob([wav16(await samples(note, window))], { type:'audio/wav' }); const link = document.createElement('a'); link.href = URL.createObjectURL(blob); link.download = `clarinet_${note.replace('#', 'as').toLowerCase()}_${window.id}.wav`; link.click(); setTimeout(() => URL.revokeObjectURL(link.href), 1000);
+      status.textContent = `已下载 ${link.download}；先保留在下载目录，选定三枚后再统一放入独立候选目录。`;
+    }
+    for (const note of HIGH_NOTES) { const card = document.createElement('section'); card.className = 'card'; card.innerHTML = `<h2>${note}</h2>`; for (const window of WINDOWS) { const row = document.createElement('div'); row.className = 'window'; row.innerHTML = `<span class="label">${window.label}</span> <span> ${window.startSeconds.toFixed(1)}–${(window.startSeconds + 0.8).toFixed(1)} 秒</span>`; const listen = document.createElement('button'); listen.textContent = '试听'; listen.addEventListener('click', () => play(note, window).catch((error) => status.textContent = `失败：${error.message}`)); const save = document.createElement('button'); save.className = 'download'; save.textContent = '下载 WAV'; save.addEventListener('click', () => download(note, window).catch((error) => status.textContent = `失败：${error.message}`)); row.append(listen, save); card.append(row); } cards.append(card); }
+  })();
+  </script>
+</body>
+</html>

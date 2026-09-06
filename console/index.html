@@ -1,0 +1,2181 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>A Band of One · 控制台</title>
+  <style>
+    /* ===== Telepathic Instruments Design Tokens ===== */
+    :root {
+      --color-solder-orange: #ff6c2f;
+      --color-bone: #d7cdb8;
+      --color-signal-white: #ffffff;
+      --color-linen-gray: #e5e7eb;
+      --color-fog: #c2c2c2;
+      --color-soft-mist: #dddee2;
+      --color-ash: #a3a3a3;
+      --color-carbon-black: #000000;
+      --color-deep-charcoal: #191919;
+
+      --font-suisse-intl: 'Suisse Intl', 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      --font-suisse-mono: 'Suisse Intl Mono', 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+      --text-caption: 12px;
+      --text-body: 16px;
+      --text-subheading: 18px;
+      --text-heading-sm: 20px;
+      --text-heading: 24px;
+      --text-display: 100px;
+
+      --radius-sm: 2px;
+      --radius-card: 24px;
+      --radius-button: 9999px;
+      --radius-navpill: 64px;
+
+      --page-max-width: 1280px;
+      --section-gap: 24px;
+      --card-padding: 24px;
+      --element-gap: 12px;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--color-linen-gray);
+      color: var(--color-carbon-black);
+      font-family: var(--font-suisse-intl);
+      font-size: var(--text-body);
+      line-height: 1.5;
+    }
+
+    button, input, select {
+      font-family: inherit;
+      font-size: inherit;
+      color: inherit;
+    }
+
+    button { cursor: pointer; border: none; background: none; }
+
+    /* ===== Layout ===== */
+    .app {
+      max-width: var(--page-max-width);
+      margin: 0 auto;
+      padding: 24px 24px 56px;
+    }
+
+    /* ===== Floating Nav Pill ===== */
+    .nav-pill {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      max-width: 720px;
+      margin: 0 auto 32px;
+      padding: 14px 28px;
+      background: var(--color-deep-charcoal);
+      border-radius: var(--radius-navpill);
+      color: var(--color-signal-white);
+    }
+
+    .brand {
+      font-size: 18px;
+      font-weight: 500;
+      letter-spacing: -0.2px;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 8px;
+    }
+
+    .nav-link {
+      padding: 8px 16px;
+      border-radius: var(--radius-button);
+      font-family: var(--font-suisse-mono);
+      font-size: var(--text-caption);
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      color: var(--color-signal-white);
+      opacity: 0.7;
+      transition: opacity 0.25s ease, background 0.25s ease;
+    }
+
+    .nav-link:hover { opacity: 1; }
+    .nav-link.active {
+      opacity: 1;
+      background: rgba(255, 255, 255, 0.12);
+    }
+
+    /* ===== Card ===== */
+    .card {
+      background: var(--color-signal-white);
+      border-radius: var(--radius-card);
+      padding: var(--card-padding);
+    }
+
+    .card + .card { margin-top: var(--section-gap); }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+
+    .card-title {
+      font-size: var(--text-heading);
+      font-weight: 500;
+      letter-spacing: -0.48px;
+      line-height: 1.2;
+    }
+
+    .card-meta {
+      font-family: var(--font-suisse-mono);
+      font-size: var(--text-caption);
+      color: var(--color-ash);
+      text-transform: uppercase;
+    }
+
+    /* ===== Buttons ===== */
+    .btn-pill {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 10px 22px;
+      border-radius: var(--radius-button);
+      font-family: var(--font-suisse-mono);
+      font-size: var(--text-caption);
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      transition: transform 0.2s ease, opacity 0.2s ease;
+    }
+
+    .btn-pill:active { transform: scale(0.98); }
+
+    .btn-primary {
+      background: var(--color-solder-orange);
+      color: var(--color-signal-white);
+    }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--color-carbon-black);
+      border: 1px solid var(--color-carbon-black);
+    }
+
+    .btn-group {
+      display: inline-flex;
+      gap: 8px;
+    }
+
+    .btn-toggle {
+      padding: 8px 16px;
+      border-radius: var(--radius-button);
+      font-family: var(--font-suisse-mono);
+      font-size: var(--text-caption);
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      border: 1px solid var(--color-carbon-black);
+      color: var(--color-carbon-black);
+      background: transparent;
+    }
+
+    .btn-toggle.active {
+      background: var(--color-deep-charcoal);
+      color: var(--color-signal-white);
+      border-color: var(--color-deep-charcoal);
+    }
+
+    /* ===== Workspace ===== */
+    .workspace { display: none; }
+    .workspace.active { display: block; }
+
+    /* ===== Score Area ===== */
+    .score-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+
+    .score-title {
+      font-size: var(--text-heading-sm);
+      font-weight: 500;
+      letter-spacing: -0.4px;
+    }
+
+    .score-bpm {
+      font-family: var(--font-suisse-mono);
+      font-size: var(--text-body);
+      color: var(--color-ash);
+    }
+
+    .score-stage {
+      min-height: 160px;
+      border: 1px solid var(--color-linen-gray);
+      border-radius: 16px;
+      padding: 20px;
+      background: var(--color-signal-white);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .score-playhead {
+      position: absolute;
+      left: 50%;
+      top: 8px;
+      bottom: 8px;
+      width: 2px;
+      background: var(--color-solder-orange);
+      transform: translateX(-50%);
+      pointer-events: none;
+      z-index: 3;
+    }
+
+    .score-track {
+      transform: translate3d(0, 0, 0);
+      transition: transform 110ms linear;
+      will-change: transform;
+    }
+
+    /* Staff notation */
+    .staff {
+      position: relative;
+      height: 120px;
+      min-width: 640px;
+      width: 640px;
+    }
+
+    .staff-line {
+      position: absolute;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: var(--color-carbon-black);
+      opacity: 0.35;
+    }
+
+    .staff-clef {
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 72px;
+      line-height: 1;
+      opacity: 0.9;
+    }
+
+    .staff-note {
+      position: absolute;
+      width: 14px;
+      height: 10px;
+      background: var(--color-carbon-black);
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+    }
+
+    /* Jianpu notation */
+    .jianpu {
+      position: relative;
+      display: flex;
+      align-items: flex-end;
+      gap: 18px;
+      min-width: 640px;
+      padding: 24px 0;
+      font-family: var(--font-suisse-mono);
+      font-size: 32px;
+      letter-spacing: -1px;
+    }
+
+    .jianpu-note {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-width: 28px;
+    }
+
+    .jianpu-underline {
+      height: 2px;
+      background: var(--color-carbon-black);
+      margin-top: 2px;
+    }
+
+    .jianpu-underline.half { width: 60%; }
+    .jianpu-underline.quarter { width: 40%; }
+
+    /* ===== Keyboard Area ===== */
+    .keyboard-section {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 24px;
+      margin-top: 24px;
+      align-items: start;
+    }
+
+    @media (max-width: 720px) {
+      .keyboard-section { grid-template-columns: 1fr; }
+    }
+
+    .keys-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: var(--element-gap);
+    }
+
+    .key {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 120px;
+      padding: 16px 8px;
+      border: 1px solid var(--color-carbon-black);
+      border-radius: var(--radius-sm);
+      background: var(--color-signal-white);
+      color: var(--color-carbon-black);
+      transition: background 0.15s ease, color 0.15s ease, transform 0.1s ease;
+      user-select: none;
+    }
+
+    .key:active { transform: translateY(1px); }
+
+    .key.active { background: var(--color-deep-charcoal); color: var(--color-signal-white); }
+    .key.waiting { background: var(--color-solder-orange); color: var(--color-signal-white); }
+    .key.holding { background: var(--color-deep-charcoal); color: var(--color-signal-white); }
+
+    .key-label {
+      font-size: var(--text-heading-sm);
+      font-weight: 500;
+      letter-spacing: -0.4px;
+      line-height: 1;
+    }
+
+    .key-solfege {
+      font-family: var(--font-suisse-mono);
+      font-size: var(--text-caption);
+      text-transform: uppercase;
+      color: var(--color-ash);
+      margin-top: 8px;
+    }
+
+    .key.active .key-solfege,
+    .key.waiting .key-solfege,
+    .key.holding .key-solfege { color: rgba(255, 255, 255, 0.7); }
+
+    /* ===== Encoder / Knob ===== */
+    .encoder-panel {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0;
+      padding: 20px;
+      border: 1px solid var(--color-linen-gray);
+      border-radius: 16px;
+      min-width: 180px;
+    }
+
+    .encoder-control {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      width: 100%;
+    }
+
+    .knob {
+      position: relative;
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      border: 1px solid var(--color-carbon-black);
+      background: var(--color-signal-white);
+      transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
+    }
+
+    .encoder-control.s9-pressed .knob {
+      background: var(--color-deep-charcoal);
+      border-color: var(--color-deep-charcoal);
+      color: var(--color-signal-white);
+    }
+
+    .encoder-control.s9-pressed .knob-tick {
+      background: var(--color-signal-white);
+    }
+
+    .encoder-control.s9-pressed .knob-center {
+      color: var(--color-signal-white);
+    }
+
+    .encoder-control.s9-pressed .knob-state {
+      color: var(--color-solder-orange);
+      font-weight: 600;
+    }
+
+    .knob-tick {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 2px;
+      height: 16px;
+      background: var(--color-carbon-black);
+      transform-origin: 50% 0;
+      transform: translate(-50%, 0) rotate(var(--knob-angle, 0deg)) translateY(-52px);
+      transition: transform 0.2s ease;
+    }
+
+    .knob-center {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-family: var(--font-suisse-mono);
+      font-size: var(--text-caption);
+      color: var(--color-ash);
+    }
+
+    .knob-state {
+      min-height: 18px;
+      font-family: var(--font-suisse-mono);
+      font-size: var(--text-caption);
+      color: var(--color-carbon-black);
+      line-height: 18px;
+    }
+
+    .knob-hints {
+      display: flex;
+      gap: 12px;
+      font-family: var(--font-suisse-mono);
+      font-size: 11px;
+      color: var(--color-ash);
+    }
+
+    /* ===== LEDs ===== */
+    .leds-panel {
+      grid-column: 1 / -1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      padding: 14px;
+      border: 1px solid var(--color-linen-gray);
+      border-radius: 16px;
+    }
+
+    .led {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      border: 1px solid var(--color-linen-gray);
+      background: var(--color-soft-mist);
+      transition: background 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .led.on {
+      background: var(--color-solder-orange);
+      box-shadow: 0 0 0 4px rgba(255, 108, 47, 0.15);
+    }
+
+    .led-label {
+      font-family: var(--font-suisse-mono);
+      font-size: 10px;
+      color: var(--color-ash);
+      margin-top: 4px;
+      text-align: center;
+    }
+
+    /* ===== Status Bar ===== */
+    .status-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-top: 24px;
+      padding: 14px 20px;
+      border-top: 1px solid var(--color-linen-gray);
+      flex-wrap: wrap;
+    }
+
+    .status-items {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+    }
+
+    .status-item {
+      font-family: var(--font-suisse-mono);
+      font-size: var(--text-caption);
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      color: var(--color-carbon-black);
+    }
+
+    .status-item .muted { color: var(--color-ash); }
+
+    .volume-control {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .volume-control input[type='range'] {
+      width: 120px;
+      accent-color: var(--color-solder-orange);
+    }
+
+    /* ===== Import Workspace ===== */
+    .import-drop {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      padding: 48px 24px;
+      border: 2px dashed var(--color-linen-gray);
+      border-radius: 16px;
+      text-align: center;
+      transition: border-color 0.2s ease;
+    }
+
+    .import-drop:hover { border-color: var(--color-ash); }
+
+    .import-drop.dragover { border-color: var(--color-solder-orange); }
+
+    .file-input { display: none; }
+
+    .library-list {
+      margin-top: 24px;
+    }
+
+    .library-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 16px;
+      border: 1px solid var(--color-linen-gray);
+      border-radius: 12px;
+      margin-top: 12px;
+    }
+
+    .library-item-info { display: flex; flex-direction: column; gap: 4px; }
+    .library-item-title { font-size: var(--text-subheading); font-weight: 500; }
+    .library-item-meta { font-family: var(--font-suisse-mono); font-size: var(--text-caption); color: var(--color-ash); }
+
+    .ai-score-help {
+      margin-top: 28px;
+      padding: 0;
+      border: 0;
+      border-radius: 0;
+      background: transparent;
+      color: var(--color-deep-charcoal);
+      font-size: var(--text-body);
+    }
+
+    .ai-score-help-title {
+      margin: 0 0 18px;
+      font-size: var(--text-subheading);
+      font-weight: 500;
+      letter-spacing: -0.3px;
+    }
+
+    .ai-help-steps { display: flex; flex-direction: column; gap: 18px; }
+
+    .ai-help-step {
+      display: grid;
+      grid-template-columns: 44px minmax(0, 1fr);
+      gap: 14px;
+      align-items: start;
+    }
+
+    .ai-step-number {
+      margin-top: 2px;
+      padding: 4px 0;
+      border: 1px solid rgba(255, 108, 47, 0.4);
+      border-radius: var(--radius-button);
+      color: var(--color-solder-orange);
+      font-family: var(--font-suisse-mono);
+      font-size: var(--text-caption);
+      letter-spacing: 0.4px;
+      text-align: center;
+    }
+
+    .ai-step-title { font-size: var(--text-body); font-weight: 500; }
+    .ai-step-desc { margin-top: 2px; color: #6b6b6b; font-size: 14px; }
+
+    .ai-prompt-block {
+      position: relative;
+      margin-top: 10px;
+      padding: 40px 20px 18px;
+      border-radius: 14px;
+      background: var(--color-deep-charcoal);
+    }
+
+    .ai-prompt-block .btn-copy {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      padding: 6px 14px;
+      border: none;
+      background: rgba(255, 108, 47, 0.16);
+      color: var(--color-solder-orange);
+      font-size: 11px;
+    }
+
+    .ai-prompt-label {
+      position: absolute;
+      top: 14px;
+      left: 20px;
+      color: rgba(255, 255, 255, 0.45);
+      font-family: var(--font-suisse-mono);
+      font-size: 11px;
+      letter-spacing: 0.6px;
+      text-transform: uppercase;
+    }
+
+    .ai-prompt-text {
+      margin: 0;
+      color: var(--color-bone);
+      font-family: var(--font-suisse-mono);
+      font-size: 13.5px;
+      line-height: 1.75;
+    }
+
+    .ai-prompt-text code { color: var(--color-signal-white); }
+
+    .ai-score-help-footnote {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      margin: 18px 0 0;
+      color: #6b6b6b;
+      font-size: 14px;
+    }
+
+    .ai-score-help-footnote .dot {
+      color: var(--color-solder-orange);
+      font-family: var(--font-suisse-mono);
+    }
+
+    .completion-modal {
+      position: fixed;
+      inset: 0;
+      z-index: 10;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+      background: rgba(25, 25, 25, 0.38);
+    }
+
+    .completion-card {
+      width: min(440px, 100%);
+      padding: 28px;
+      border-radius: 20px;
+      background: var(--color-deep-charcoal);
+      color: var(--color-signal-white);
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.28);
+    }
+
+    .completion-card h2 { margin: 0 0 16px; font-size: var(--text-heading); }
+    .completion-card p { margin: 8px 0; color: var(--color-bone); }
+    .completion-card .btn-primary { margin-top: 18px; }
+    .completion-status { min-height: 20px; color: var(--color-solder-orange); }
+
+    .global-error {
+      margin-bottom: 16px;
+      padding: 12px 16px;
+      background: rgba(255, 108, 47, 0.08);
+      border: 1px solid rgba(255, 108, 47, 0.25);
+      border-radius: 12px;
+      font-size: var(--text-body);
+      color: var(--color-carbon-black);
+      text-align: center;
+    }
+
+    .error-banner {
+      margin-top: 16px;
+      padding: 12px 16px;
+      background: rgba(255, 108, 47, 0.08);
+      border-left: 3px solid var(--color-solder-orange);
+      border-radius: 0 8px 8px 0;
+      font-size: var(--text-body);
+      color: var(--color-carbon-black);
+    }
+
+    /* ===== Hidden utilities ===== */
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <!-- 全局提示 -->
+    <div id="global-error" class="global-error hidden" role="alert"></div>
+
+    <!-- 浮动导航胶囊 -->
+    <nav class="nav-pill" aria-label="工作区">
+      <div class="brand">A Band of One</div>
+      <div class="nav-links" role="tablist">
+        <button class="nav-link active" role="tab" data-workspace="score" aria-selected="true">跟谱练习</button>
+        <button class="nav-link" role="tab" data-workspace="free" aria-selected="false">自由演奏</button>
+        <button class="nav-link" role="tab" data-workspace="import" aria-selected="false">乐谱库与导入</button>
+      </div>
+    </nav>
+
+    <!-- 工作区：跟谱练习 -->
+    <section id="workspace-score" class="card workspace active" aria-labelledby="tab-score">
+      <div class="card-header">
+        <div>
+          <h2 class="card-title">跟谱练习</h2>
+          <div class="card-meta">严格判定 · 弹错不推进 · 曲终统计</div>
+        </div>
+        <button id="btn-connect" class="btn-pill btn-ghost btn-connect" type="button">连接键盘</button>
+      </div>
+
+      <div class="score-toolbar">
+        <div style="display:flex;align-items:center;gap:16px;">
+          <span id="score-title" class="score-title">未装载曲目</span>
+          <span id="score-bpm" class="score-bpm">—</span>
+        </div>
+        <div class="btn-group" role="group" aria-label="乐谱显示模式">
+          <button class="btn-toggle active" data-notation="staff" type="button">五线谱</button>
+          <button class="btn-toggle" data-notation="jianpu" type="button">简谱</button>
+        </div>
+        <button id="btn-load-score" class="btn-pill btn-primary" type="button">装载乐谱</button>
+      </div>
+
+      <div class="score-stage" id="score-stage">
+        <div class="score-playhead" id="score-playhead" aria-hidden="true"></div>
+        <!-- 五线谱 -->
+        <div id="staff-view" class="staff score-track">
+          <div class="staff-clef">𝄞</div>
+          <div class="staff-line" style="top:20%"></div>
+          <div class="staff-line" style="top:36%"></div>
+          <div class="staff-line" style="top:52%"></div>
+          <div class="staff-line" style="top:68%"></div>
+          <div class="staff-line" style="top:84%"></div>
+        </div>
+        <!-- 简谱 -->
+        <div id="jianpu-view" class="jianpu score-track hidden"></div>
+      </div>
+
+      <div class="keyboard-section">
+        <div class="keys-grid" id="keys-grid" aria-label="八键键盘">
+          <!-- S1–S8 由 JS 生成 -->
+        </div>
+
+        <div class="encoder-panel">
+          <div class="encoder-control" id="knob" data-control="s9" aria-label="旋钮">
+            <div class="knob">
+              <div class="knob-tick" id="knob-tick"></div>
+              <div class="knob-center">S9</div>
+            </div>
+            <div class="knob-state" id="knob-feedback">按压开始</div>
+            <div class="knob-hints">
+              <span>左旋</span>
+              <span>·</span>
+              <span>右旋</span>
+              <span>·</span>
+              <span>按压</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="leds-panel" aria-label="节奏光效">
+          <div><div class="led" id="led-0" data-index="0"></div><div class="led-label">D1</div></div>
+          <div><div class="led" id="led-1" data-index="1"></div><div class="led-label">D2</div></div>
+          <div><div class="led" id="led-2" data-index="2"></div><div class="led-label">D3</div></div>
+          <div><div class="led" id="led-3" data-index="3"></div><div class="led-label">D4</div></div>
+          <div><div class="led" id="led-4" data-index="4"></div><div class="led-label">D5</div></div>
+        </div>
+      </div>
+
+      <div class="status-bar">
+        <div class="status-items">
+          <div class="status-item"><span class="muted">连接</span> <span id="st-connection">未连接</span></div>
+          <div class="status-item"><span class="muted">乐器</span> <span id="st-instrument">—</span></div>
+          <div class="status-item"><span class="muted">音区</span> <span id="st-octave">—</span></div>
+          <div class="status-item"><span class="muted">错误</span> <span id="st-errors">0</span></div>
+          <div class="status-item"><span class="muted">用时</span> <span id="st-time">00:00</span></div>
+        </div>
+        <div class="volume-control">
+          <span class="status-item">音量</span>
+          <input id="volume" type="range" min="0" max="100" value="70" aria-label="音量">
+          <span class="status-item" id="volume-value">70</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- 工作区：自由演奏 -->
+    <section id="workspace-free" class="card workspace" aria-labelledby="tab-free">
+      <div class="card-header">
+        <div>
+          <h2 class="card-title">自由演奏</h2>
+          <div class="card-meta">按键即发声 · 无判定 · 可切换乐器与音区</div>
+        </div>
+        <button class="btn-pill btn-ghost btn-connect" type="button">连接键盘</button>
+      </div>
+
+      <div class="keyboard-section">
+        <div class="keys-grid" id="keys-grid-free" aria-label="八键键盘"></div>
+        <div class="encoder-panel">
+          <div class="encoder-control" id="knob-free" data-control="s9" aria-label="旋钮">
+            <div class="knob">
+              <div class="knob-tick"></div>
+              <div class="knob-center">S9</div>
+            </div>
+            <div class="knob-state">按压开始</div>
+            <div class="knob-hints"><span>左旋</span><span>·</span><span>右旋</span><span>·</span><span>按压</span></div>
+          </div>
+        </div>
+        <div class="leds-panel" aria-label="节奏光效">
+          <div><div class="led" data-index="0"></div><div class="led-label">D1</div></div>
+          <div><div class="led" data-index="1"></div><div class="led-label">D2</div></div>
+          <div><div class="led" data-index="2"></div><div class="led-label">D3</div></div>
+          <div><div class="led" data-index="3"></div><div class="led-label">D4</div></div>
+          <div><div class="led" data-index="4"></div><div class="led-label">D5</div></div>
+        </div>
+      </div>
+
+      <div class="status-bar">
+        <div class="status-items">
+          <div class="status-item"><span class="muted">连接</span> <span id="st-connection-free">未连接</span></div>
+          <div class="status-item"><span class="muted">乐器</span> <span id="st-instrument-free">钢琴</span></div>
+          <div class="status-item"><span class="muted">音区</span> <span id="st-octave-free">C4</span></div>
+        </div>
+        <div class="volume-control">
+          <span class="status-item">音量</span>
+          <input id="volume-free" type="range" min="0" max="100" value="70" aria-label="音量">
+          <span class="status-item" id="volume-value-free">70</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- 工作区：乐谱库与导入 -->
+    <section id="workspace-import" class="card workspace" aria-labelledby="tab-import">
+      <div class="card-header">
+        <div>
+          <h2 class="card-title">乐谱库与导入</h2>
+          <div class="card-meta">仅接受 abo.score v1 JSON · 导入后需手动装载</div>
+        </div>
+      </div>
+
+      <div class="import-drop" id="import-drop">
+        <div class="score-title">拖放乐谱文件到此处</div>
+        <div class="card-meta">或点击选择本地 abo.score 文件</div>
+        <button id="btn-select-file" class="btn-pill btn-ghost" type="button">选择文件</button>
+        <input id="file-input" class="file-input" type="file" accept=".abo.score.json,.json,.score,application/json">
+      </div>
+
+      <div class="library-list" id="library-list">
+        <h3 class="card-title" style="font-size:var(--text-subheading);">会话曲库</h3>
+        <div id="library-items">
+          <div class="library-item">
+            <div class="library-item-info">
+              <div class="library-item-title">小星星</div>
+              <div class="library-item-meta">BPM 90 · 42 音符 · 内置</div>
+            </div>
+            <button class="btn-pill btn-primary" type="button">装载</button>
+          </div>
+        </div>
+      </div>
+
+      <aside id="ai-score-help" class="ai-score-help">
+        <h3 class="ai-score-help-title">如何用 AI 生成乐谱文件</h3>
+        <div class="ai-help-steps">
+          <div class="ai-help-step">
+            <span class="ai-step-number">01</span>
+            <div>
+              <div class="ai-step-title">准备乐谱图片</div>
+              <div class="ai-step-desc">清晰、正向的单声部五线谱照片或截图，一次一首。</div>
+            </div>
+          </div>
+          <div class="ai-help-step">
+            <span class="ai-step-number">02</span>
+            <div>
+              <div class="ai-step-title">把提示词发给支持识图的 AI</div>
+              <div class="ai-prompt-block">
+                <span class="ai-prompt-label">提示词 · PROMPT</span>
+                <button id="ai-prompt-copy" class="btn-pill btn-copy" type="button">复制</button>
+                <p id="ai-score-prompt-text" class="ai-prompt-text">“只识别主旋律；若为钢琴大谱表，只取高音谱表，忽略低音伴奏、和弦及伴奏升降号。输出字段仅包括 <code>schema、version、id、title、bpm、notes</code>：<code>schema</code> 固定为 "abo.score"，<code>version</code> 为 1，<code>id</code> 使用 ASCII，<code>bpm</code> 为 60–180 的整数；音符使用 <code>{n,b}</code>，do–si 对应 <code>n=0–6</code>，<code>b</code> 为拍数，四分音符为 1，且必须是 0.25 的倍数。未标注 BPM 时使用 90。系统不支持休止符：删除休止的空拍，让后续音符立即衔接。遇到无法辨认、和弦、主旋律升降音或节拍不确定时，不要猜测，先列出待确认项。确认无歧义后，只输出 JSON，不要 Markdown、解释或额外字段。保存为 UTF-8 的「曲名.abo.score.json」。“</p>
+              </div>
+            </div>
+          </div>
+          <div class="ai-help-step">
+            <span class="ai-step-number">03</span>
+            <div>
+              <div class="ai-step-title">保存并人工核对</div>
+              <div class="ai-step-desc">保存为 UTF-8 的「曲名.abo.score.json」，先核对音符、节拍和 BPM，再拖入上方导入。</div>
+            </div>
+          </div>
+        </div>
+        <p class="ai-score-help-footnote"><span class="dot">·</span>网页不调用 AI 服务，所有生成都在你自己的 AI 工具中完成。</p>
+      </aside>
+
+      <div id="import-error" class="error-banner hidden"></div>
+    </section>
+  </div>
+
+  <div id="completion-modal" role="dialog" aria-modal="true" aria-labelledby="completion-title" class="completion-modal hidden">
+    <div class="completion-card">
+      <h2 id="completion-title">演奏完成</h2>
+      <p id="completion-summary"></p>
+      <p class="completion-status" id="completion-status">按任意键返回待机</p>
+      <button id="completion-reset" class="btn-pill btn-primary" type="button">返回待机</button>
+    </div>
+  </div>
+
+  <script data-abo-core>
+    /* Pure protocol core. Keep this browser/Node-testable and UI-independent. */
+    (() => {
+      const textEncoder = new TextEncoder();
+
+      function utf8Bytes(value) {
+        return textEncoder.encode(value);
+      }
+
+      function validateScore(value) {
+        const errors = [];
+        if (!value || typeof value !== 'object' || Array.isArray(value)) {
+          return { ok: false, score: null, errors: ['文件不是有效 JSON 对象'] };
+        }
+        if (value.schema !== 'abo.score') errors.push('schema 必须为 abo.score');
+        if (!Number.isInteger(value.version) || value.version !== 1) errors.push('version 必须为整数 1');
+        if (typeof value.id !== 'string' || !/^[\x21-\x7e]{1,32}$/.test(value.id)) errors.push('id 必须是 1–32 个 ASCII 字符');
+        if (typeof value.title !== 'string' || value.title.length === 0 || utf8Bytes(value.title).length > 48) errors.push('title 必须是 1–48 字节的 UTF-8 字符串');
+        if (!Number.isInteger(value.bpm) || value.bpm < 60 || value.bpm > 180) errors.push('bpm 必须是 60–180 的整数');
+        if (!Array.isArray(value.notes) || value.notes.length < 1 || value.notes.length > 128) errors.push('notes 必须包含 1–128 个音符');
+        if (Array.isArray(value.notes)) {
+          value.notes.forEach((note, index) => {
+            if (!note || !Number.isInteger(note.n) || note.n < 0 || note.n > 6) errors.push(`notes[${index}].n 必须是 0–6 的整数`);
+            if (!note || typeof note.b !== 'number' || !Number.isFinite(note.b) || note.b < 0.25 || note.b > 8 || !Number.isInteger(note.b * 4)) errors.push(`notes[${index}].b 必须是 0.25–8 的 0.25 倍数`);
+          });
+        }
+        return errors.length > 0 ? { ok: false, score: null, errors } : { ok: true, score: value, errors: [] };
+      }
+
+      function validateBoardState(value) {
+        const errors = [];
+        if (!value || typeof value !== 'object' || Array.isArray(value)) {
+          return { ok: false, state: null, errors: ['state 必须是对象'] };
+        }
+        if (value.t !== 'state') errors.push('state.t 必须为 state');
+        if (value.v !== 1) errors.push('state.v 必须为 1');
+        if (value.phase !== undefined && !['waiting', 'standby', 'playing', 'finished'].includes(value.phase)) errors.push('state.phase 无效');
+        if (value.subphase !== undefined && !['none', 'waiting', 'holding'].includes(value.subphase)) errors.push('state.subphase 无效');
+        if (value.mode !== undefined && !['score', 'free'].includes(value.mode)) errors.push('state.mode 无效');
+        if (value.score_crc32 !== undefined && (typeof value.score_crc32 !== 'string' || !/^[0-9a-f]{8}$/.test(value.score_crc32))) errors.push('state.score_crc32 必须为 8 位小写十六进制');
+        if (value.cursor !== undefined && (!Number.isInteger(value.cursor) || value.cursor < 0)) errors.push('state.cursor 必须为非负整数');
+        const hasTicks = value.note_ticks !== undefined || value.note_total_ticks !== undefined;
+        if (hasTicks) {
+          if (!Number.isInteger(value.note_ticks) || value.note_ticks < 0) errors.push('state.note_ticks 必须为非负整数');
+          if (!Number.isInteger(value.note_total_ticks) || value.note_total_ticks < 0) errors.push('state.note_total_ticks 必须为非负整数');
+          if (Number.isInteger(value.note_ticks) && Number.isInteger(value.note_total_ticks) && value.note_ticks > value.note_total_ticks) errors.push('state.note_ticks 不得超过 note_total_ticks');
+        }
+        if (value.volume !== undefined && (!Number.isInteger(value.volume) || value.volume < 0 || value.volume > 100)) errors.push('state.volume 必须为 0–100 的整数');
+        if (value.keys !== undefined && (!Array.isArray(value.keys) || value.keys.some(key => !['idle', 'waiting', 'holding'].includes(key)))) errors.push('state.keys 含有无效键状态');
+        return errors.length > 0 ? { ok: false, state: null, errors } : { ok: true, state: value, errors: [] };
+      }
+
+      function validateInputMessage(value) {
+        const errors = [];
+        if (!value || typeof value !== 'object' || value.t !== 'input') errors.push('input 必须是 input 消息');
+        if (!value || value.v !== 1) errors.push('input.v 必须为 1');
+        if (!value || !Number.isInteger(value.seq) || value.seq < 0 || value.seq > 0xffffffff) errors.push('input.seq 必须为 uint32');
+        if (!value || !/^s[1-9]$/.test(value.control || '')) errors.push('input.control 必须为 s1–s9');
+        if (!value || !['pressed', 'released'].includes(value.phase)) errors.push('input.phase 无效');
+        return errors.length > 0 ? { ok: false, input: null, errors } : { ok: true, input: value, errors: [] };
+      }
+
+      function pushU16LE(bytes, value) {
+        bytes.push(value & 0xff, (value >>> 8) & 0xff);
+      }
+
+      function canonicalScoreBytes(score) {
+        const bytes = Array.from(utf8Bytes('abo.score'));
+        bytes.push(0, score.version, score.id.length, ...utf8Bytes(score.id));
+        const titleBytes = utf8Bytes(score.title);
+        bytes.push(titleBytes.length, ...titleBytes);
+        pushU16LE(bytes, score.bpm);
+        pushU16LE(bytes, score.notes.length);
+        score.notes.forEach(note => {
+          bytes.push(note.n);
+          pushU16LE(bytes, Math.round(note.b * 96));
+        });
+        return Uint8Array.from(bytes);
+      }
+
+      function crc32Hex(bytes) {
+        let crc = 0xffffffff;
+        for (const byte of bytes) {
+          crc ^= byte;
+          for (let bit = 0; bit < 8; bit += 1) crc = (crc & 1) ? (crc >>> 1) ^ 0xedb88320 : crc >>> 1;
+        }
+        return ((crc ^ 0xffffffff) >>> 0).toString(16).padStart(8, '0');
+      }
+
+      function buildScoreUpload(score, tx) {
+        const validation = validateScore(score);
+        if (!validation.ok) throw new Error(validation.errors.join('；'));
+        if (!/^[0-9a-f]{8}$/.test(tx)) throw new Error('tx 必须是 8 位小写十六进制');
+        const messages = [{ t: 'score_begin', v: 1, tx, schema: score.schema, score_version: score.version, id: score.id, title: score.title, bpm: score.bpm, count: score.notes.length }];
+        for (let i = 0; i < score.notes.length; i += 16) {
+          messages.push({ t: 'score_chunk', v: 1, tx, seq: messages.length - 1, notes: score.notes.slice(i, i + 16) });
+        }
+        messages.push({ t: 'score_commit', v: 1, tx, chunks: messages.length - 1, crc32: crc32Hex(canonicalScoreBytes(score)) });
+        return messages;
+      }
+
+      function createVolumeCoordinator(options = {}) {
+        const initialVolume = Number.isInteger(options.initialVolume) && options.initialVolume >= 0 && options.initialVolume <= 100
+          ? options.initialVolume
+          : 70;
+        const debounceMs = Number.isFinite(options.debounceMs) && options.debounceMs >= 0 ? options.debounceMs : 80;
+        const schedule = options.setTimeout || setTimeout;
+        const cancel = options.clearTimeout || clearTimeout;
+        const sendVolume = options.sendVolume || (async () => {});
+        const onChange = options.onChange || (() => {});
+        const onError = options.onError || (() => {});
+        let value = initialVolume;
+        let desired = initialVolume;
+        let confirmed = initialVolume;
+        let queued = null;
+        let inFlight = null;
+        let timer = null;
+
+        const snapshot = () => ({
+          value,
+          desired,
+          confirmed,
+          pending: queued,
+          inFlight
+        });
+
+        const publish = () => onChange(snapshot());
+
+        const flush = () => {
+          timer = null;
+          if (inFlight !== null || queued === null) return;
+          const requested = queued;
+          queued = null;
+          inFlight = requested;
+          publish();
+          Promise.resolve()
+            .then(() => sendVolume(requested))
+            .then(() => {
+              if (inFlight !== requested) return;
+              inFlight = null;
+              if (queued !== null && timer === null) flush();
+              publish();
+            })
+            .catch(error => {
+              onError(error && typeof error.message === 'string' ? error : new Error('音量下发失败'));
+              if (inFlight !== requested) return;
+              inFlight = null;
+              if (queued === null && desired === requested) {
+                desired = confirmed;
+                value = confirmed;
+              }
+              if (queued !== null && timer === null) flush();
+              publish();
+            });
+        };
+
+        const scheduleFlush = () => {
+          if (timer !== null) cancel(timer);
+          timer = schedule(flush, debounceMs);
+        };
+
+        const input = nextValue => {
+          if (!Number.isInteger(nextValue) || nextValue < 0 || nextValue > 100) throw new Error('音量必须为 0–100 的整数');
+          value = nextValue;
+          desired = nextValue;
+          queued = nextValue;
+          publish();
+          scheduleFlush();
+        };
+
+        const onBoardState = nextValue => {
+          if (!Number.isInteger(nextValue) || nextValue < 0 || nextValue > 100) return false;
+          const protectsLocalIntent = timer !== null || queued !== null || inFlight !== null || desired !== confirmed;
+          confirmed = nextValue;
+          if (!protectsLocalIntent) {
+            desired = nextValue;
+            value = nextValue;
+          } else if (nextValue === desired) {
+            value = nextValue;
+          }
+          publish();
+          return true;
+        };
+
+        const reset = () => {
+          if (timer !== null) cancel(timer);
+          timer = null;
+          queued = null;
+          inFlight = null;
+          desired = confirmed;
+          value = confirmed;
+          publish();
+        };
+
+        return { input, onBoardState, reset, snapshot };
+      }
+
+      function createSerialManager(options) {
+        const serial = options.serial;
+        const onState = options.onState || (() => {});
+        const onMessage = options.onMessage || (() => {});
+        const onError = options.onError || (() => {});
+        const handshakeTimeoutMs = options.handshakeTimeoutMs || 2000;
+        const transactionTimeoutMs = options.transactionTimeoutMs || 2000;
+        let port = null;
+        let reader = null;
+        let writer = null;
+        let readLoopPromise = null;
+        let incomingBuffer = '';
+        let decoder = new TextDecoder();
+        let phase = 'disconnected';
+        let handshakeWait = null;
+        let pending = null;
+        let uploadInProgress = false;
+
+        const emitState = value => {
+          phase = value;
+          onState(value);
+        };
+
+        const settlePending = (error, message) => {
+          if (!pending) return;
+          const current = pending;
+          pending = null;
+          clearTimeout(current.timer);
+          if (error) current.reject(error);
+          else current.resolve(message);
+        };
+
+        const maybeSettlePending = () => {
+          if (!pending || !pending.ackReceived) return;
+          if (pending.expectedStateVolume !== undefined && pending.stateVolume !== pending.expectedStateVolume) return;
+          settlePending(null, pending.lastMessage);
+        };
+
+        const rejectHandshake = error => {
+          if (!handshakeWait) return;
+          const current = handshakeWait;
+          handshakeWait = null;
+          clearTimeout(current.timer);
+          current.reject(error);
+        };
+
+        const resolveHandshakeIfReady = () => {
+          if (!handshakeWait || !handshakeWait.hello || !handshakeWait.state) return;
+          const current = handshakeWait;
+          handshakeWait = null;
+          clearTimeout(current.timer);
+          current.resolve();
+        };
+
+        const processLine = line => {
+          let message;
+          try { message = JSON.parse(line); } catch (_) { return; }
+          if (!message || typeof message.t !== 'string') return;
+          if (message.t === 'state') {
+            const validation = validateBoardState(message);
+            if (!validation.ok) {
+              onError(new Error(validation.errors.join('；')));
+              return;
+            }
+          }
+          if (message.t === 'input') {
+            const validation = validateInputMessage(message);
+            if (!validation.ok) {
+              onError(new Error(validation.errors.join('；')));
+              return;
+            }
+          }
+          onMessage(message);
+          if (message.t === 'hello') {
+            if (message.product === 'abo' && message.protocol === 1 && handshakeWait) handshakeWait.hello = true;
+            resolveHandshakeIfReady();
+            return;
+          }
+          if (message.t === 'state') {
+            if (handshakeWait) handshakeWait.state = true;
+            resolveHandshakeIfReady();
+            if (pending && pending.expectedStateVolume !== undefined) {
+              pending.stateVolume = message.volume;
+              pending.lastMessage = message;
+              maybeSettlePending();
+            }
+          }
+          if (message.t === 'ack' && pending && message.tx === pending.tx && message.cmd === pending.cmd) {
+            pending.ackReceived = true;
+            pending.lastMessage = message;
+            if (pending.expectedStateVolume === undefined) settlePending(null, message);
+            else maybeSettlePending();
+          }
+          if (message.t === 'error' && pending && message.tx === pending.tx && message.cmd === pending.cmd) settlePending(new Error(message.reason || '板端错误'), message);
+        };
+
+        const processChunk = value => {
+          incomingBuffer += decoder.decode(value, { stream: true });
+          let index;
+          while ((index = incomingBuffer.indexOf('\n')) !== -1) {
+            const line = incomingBuffer.slice(0, index).trim();
+            incomingBuffer = incomingBuffer.slice(index + 1);
+            if (line) processLine(line);
+          }
+        };
+
+        const sendLine = async message => {
+          if (!writer) throw new Error('串口未连接');
+          const line = JSON.stringify(message) + '\n';
+          if (utf8Bytes(line).length > 768) throw new Error('串口消息超过 768 字节');
+          await writer.write(new TextEncoder().encode(line));
+        };
+
+        const readLoop = async () => {
+          if (!port || !port.readable) return;
+          reader = port.readable.getReader();
+          try {
+            while (true) {
+              const result = await reader.read();
+              if (result.done) break;
+              if (result.value) processChunk(result.value);
+            }
+          } catch (error) {
+            if (port) onError(error);
+          } finally {
+            if (reader && typeof reader.releaseLock === 'function') reader.releaseLock();
+            reader = null;
+          }
+        };
+
+        const disconnect = async () => {
+          rejectHandshake(new Error('握手已取消'));
+          settlePending(new Error('串口已断开'));
+          if (reader && typeof reader.cancel === 'function') await reader.cancel().catch(() => {});
+          if (readLoopPromise) await readLoopPromise.catch(() => {});
+          if (writer && typeof writer.releaseLock === 'function') writer.releaseLock();
+          if (port && typeof port.close === 'function') await port.close().catch(() => {});
+          reader = null;
+          writer = null;
+          port = null;
+          readLoopPromise = null;
+          incomingBuffer = '';
+          decoder = new TextDecoder();
+          uploadInProgress = false;
+          emitState('disconnected');
+        };
+
+        const connect = async () => {
+          if (!serial || typeof serial.requestPort !== 'function') throw new Error('当前浏览器不支持 Web Serial');
+          if (port) await disconnect();
+          port = await serial.requestPort({ filters: [{ usbVendorId: 0x303a }] });
+          try {
+            await port.open({ baudRate: 115200 });
+            writer = port.writable.getWriter();
+            emitState('connecting');
+            const handshakePromise = new Promise((resolve, reject) => {
+              handshakeWait = { hello: false, state: false, resolve, reject };
+              handshakeWait.timer = setTimeout(() => rejectHandshake(new Error('握手超时')), handshakeTimeoutMs);
+            });
+            readLoopPromise = readLoop();
+            await sendLine({ t: 'ping', v: 1 });
+            await handshakePromise;
+            emitState('connected');
+          } catch (error) {
+            await disconnect();
+            throw error;
+          }
+        };
+
+        const sendAndWait = async (message, options = {}) => {
+          if (pending) throw new Error('已有串口事务进行中');
+          const wait = new Promise((resolve, reject) => {
+            pending = {
+              tx: message.tx || '',
+              cmd: message.t,
+              expectedStateVolume: options.expectedStateVolume,
+              stateVolume: undefined,
+              ackReceived: false,
+              lastMessage: null,
+              resolve,
+              reject,
+              timer: setTimeout(() => settlePending(new Error('板端回执超时')), transactionTimeoutMs)
+            };
+          });
+          try {
+            await sendLine(message);
+            return await wait;
+          } catch (error) {
+            settlePending(error);
+            throw error;
+          }
+        };
+
+        const uploadScore = async score => {
+          if (uploadInProgress) throw new Error('已有上传任务进行中');
+          if (phase !== 'connected') throw new Error('串口未完成握手');
+          uploadInProgress = true;
+          try {
+            const tx = Math.floor(Math.random() * 0x100000000).toString(16).padStart(8, '0');
+            for (const message of buildScoreUpload(score, tx)) await sendAndWait(message);
+          } finally {
+            uploadInProgress = false;
+          }
+        };
+
+        const setMode = async mode => {
+          if (mode !== 'score' && mode !== 'free') throw new Error('模式必须为 score 或 free');
+          if (phase !== 'connected') throw new Error('串口未完成握手');
+          const tx = Math.floor(Math.random() * 0x100000000).toString(16).padStart(8, '0');
+          await sendAndWait({ t: 'set_mode', v: 1, tx, mode });
+        };
+
+        const setVolume = async value => {
+          if (!Number.isInteger(value) || value < 0 || value > 100) throw new Error('音量必须为 0–100 的整数');
+          if (phase !== 'connected') throw new Error('串口未完成握手');
+          const tx = Math.floor(Math.random() * 0x100000000).toString(16).padStart(8, '0');
+          return sendAndWait({ t: 'set_volume', v: 1, tx, value }, { expectedStateVolume: value });
+        };
+
+        const resetTransport = async () => {
+          if (phase !== 'connected') throw new Error('串口未完成握手');
+          const tx = Math.floor(Math.random() * 0x100000000).toString(16).padStart(8, '0');
+          return sendAndWait({ t: 'transport', v: 1, tx, action: 'reset' });
+        };
+
+        return {
+          isSupported: () => !!serial,
+          connect,
+          disconnect,
+          uploadScore,
+          setMode,
+          setVolume,
+          resetTransport,
+          processChunk,
+          handleLine: processLine,
+          sendLine,
+          get port() { return port; },
+          get reader() { return reader; },
+          get writer() { return writer; },
+          get phase() { return phase; }
+        };
+      }
+
+      function computeScoreVisualPosition({ viewportWidth, paddingLeft = 0, noteCenters = [], cursor = 0, ratio = 0, endX = 0 } = {}) {
+        const width = Number.isFinite(viewportWidth) ? Math.max(0, viewportWidth) : 0;
+        const leftPadding = Number.isFinite(paddingLeft) ? Math.max(0, paddingLeft) : 0;
+        const centers = Array.isArray(noteCenters) ? noteCenters.filter(Number.isFinite) : [];
+        const safeCursor = Math.max(0, Math.min(centers.length, Number.isInteger(cursor) ? cursor : 0));
+        const safeRatio = Math.max(0, Math.min(1, Number.isFinite(ratio) ? ratio : 0));
+        let cursorX = Number.isFinite(endX) ? Math.max(0, endX) : 0;
+        if (safeCursor < centers.length) {
+          const current = centers[safeCursor];
+          const next = safeCursor + 1 < centers.length
+            ? centers[safeCursor + 1]
+            : cursorX > current ? cursorX : current;
+          cursorX = current + (next - current) * safeRatio;
+        }
+        return {
+          cursorX,
+          translateX: width / 2 - leftPadding - cursorX
+        };
+      }
+
+      function shouldResetScoreViewport({ previousPhase, previousCursor, nextPhase, nextCursor } = {}) {
+        return nextPhase === 'standby' && nextCursor === 0 && (previousPhase !== 'standby' || previousCursor !== 0);
+      }
+
+      const isSerialSelectionCancelled = error => error && error.name === 'NotFoundError';
+
+      globalThis.AboConsoleCore = {
+        validateScore,
+        canonicalScoreBytes,
+        crc32Hex,
+        buildScoreUpload,
+        createVolumeCoordinator,
+        validateBoardState,
+        validateInputMessage,
+        computeScoreVisualPosition,
+        shouldResetScoreViewport,
+        createSerialManager,
+        isSerialSelectionCancelled
+      };
+    })();
+  </script>
+
+  <script>
+    /* =========================================================
+       A Band of One · 网页控制台框架
+       状态真相在板端；本页只负责渲染与发起请求。
+       ========================================================= */
+
+    (function () {
+      'use strict';
+
+      /* ---------- 常量 ---------- */
+      const KEYS = [
+        { id: 'S1', index: 0, solfege: 'do', label: 'S1' },
+        { id: 'S2', index: 1, solfege: 're', label: 'S2' },
+        { id: 'S3', index: 2, solfege: 'mi', label: 'S3' },
+        { id: 'S4', index: 3, solfege: 'fa', label: 'S4' },
+        { id: 'S5', index: 4, solfege: 'sol', label: 'S5' },
+        { id: 'S6', index: 5, solfege: 'la', label: 'S6' },
+        { id: 'S7', index: 6, solfege: 'si', label: 'S7' },
+        { id: 'S8', index: 7, solfege: 'inst', label: 'S8', name: '乐器' }
+      ];
+
+      const INSTRUMENTS = ['钢琴', '弦乐', '单簧管'];
+
+      const DEFAULT_SCORE = {
+        schema: 'abo.score',
+        version: 1,
+        id: 'twinkle',
+        title: '小星星',
+        bpm: 90,
+        notes: [
+          { n: 0, b: 1 }, { n: 0, b: 1 }, { n: 4, b: 1 }, { n: 4, b: 1 }, { n: 5, b: 1 }, { n: 5, b: 1 }, { n: 4, b: 2 },
+          { n: 3, b: 1 }, { n: 3, b: 1 }, { n: 2, b: 1 }, { n: 2, b: 1 }, { n: 1, b: 1 }, { n: 1, b: 1 }, { n: 0, b: 2 },
+          { n: 4, b: 1 }, { n: 4, b: 1 }, { n: 3, b: 1 }, { n: 3, b: 1 }, { n: 2, b: 1 }, { n: 2, b: 1 }, { n: 1, b: 2 },
+          { n: 0, b: 1 }, { n: 0, b: 1 }, { n: 4, b: 1 }, { n: 4, b: 1 }, { n: 5, b: 1 }, { n: 5, b: 1 }, { n: 4, b: 2 },
+          { n: 3, b: 1 }, { n: 3, b: 1 }, { n: 2, b: 1 }, { n: 2, b: 1 }, { n: 1, b: 1 }, { n: 1, b: 1 }, { n: 0, b: 2 },
+          { n: 4, b: 1 }, { n: 4, b: 1 }, { n: 3, b: 1 }, { n: 3, b: 1 }, { n: 2, b: 1 }, { n: 2, b: 1 }, { n: 1, b: 2 }
+        ]
+      };
+
+      /* ---------- 状态 ---------- */
+      const state = {
+        workspace: 'score',
+        notation: 'staff',
+        connected: false,
+        mode: 'score',
+        instrument: 0,
+        octave: 4,
+        bpm: 90,
+        score: DEFAULT_SCORE,
+        scoreLoaded: false,
+        errors: 0,
+        elapsed: 0,
+        volume: 70,
+        confirmedVolume: 70,
+        volumeDesired: 70,
+        volumePending: null,
+        volumeTimer: null,
+        volumeInFlight: false,
+        knobAngle: 0,
+        phase: 'standby',
+        subphase: 'none',
+        cursor: 0,
+        noteTicks: 0,
+        noteTotalTicks: 0,
+        scoreId: null,
+        scoreCrc32: null,
+        lastInputSeq: null,
+        s9Pressed: false,
+        completionPending: false,
+        resetRequested: false,
+        keyStates: Array(8).fill('idle'),
+        leds: Array(5).fill(false),
+        library: [{ ...DEFAULT_SCORE, source: '内置' }]
+      };
+
+      /* ---------- DOM 引用 ---------- */
+      const $ = (sel) => document.querySelector(sel);
+      const $$ = (sel) => Array.from(document.querySelectorAll(sel));
+
+      const volumeCoordinator = globalThis.AboConsoleCore.createVolumeCoordinator({
+        initialVolume: state.volume,
+        debounceMs: 80,
+        sendVolume: value => SerialManager.setVolume(value),
+        onError: error => showError('音量下发失败：' + (error.message || '未知错误')),
+        onChange: snapshot => {
+          state.volume = snapshot.value;
+          state.confirmedVolume = snapshot.confirmed;
+          state.volumeDesired = snapshot.desired;
+          state.volumePending = snapshot.pending;
+          state.volumeInFlight = snapshot.inFlight !== null;
+          renderVolumes();
+        }
+      });
+
+      /* ---------- Web Serial 管理器 ---------- */
+      function handleCompletionInput(msg) {
+        if (!state.completionPending || msg.phase !== 'pressed') return false;
+        if (state.phase === 'standby') {
+          state.completionPending = false;
+          state.resetRequested = false;
+          hideCompletionModal();
+        } else {
+          setCompletionStatus('正在等待设备返回待机…');
+        }
+        return true;
+      }
+
+      function handleCompletionResult(msg) {
+        if (typeof msg.errors === 'number') state.errors = msg.errors;
+        if (typeof msg.elapsed === 'number') state.elapsed = Math.floor(msg.elapsed / 1000);
+        renderStatus();
+        if (state.phase === 'standby') {
+          state.completionPending = false;
+          state.resetRequested = false;
+          hideCompletionModal();
+          return;
+        }
+        state.completionPending = true;
+        state.resetRequested = false;
+        showCompletionModal();
+      }
+
+      function handleBoardMessage(msg) {
+        switch (msg.t) {
+          case 'ack':
+            if (msg.cmd === 'score_commit') showError('');
+            break;
+          case 'error':
+            showError('板端错误：' + (msg.reason || '未知'));
+            break;
+          case 'state':
+            {
+              const validation = globalThis.AboConsoleCore.validateBoardState(msg);
+              if (!validation.ok) {
+                showError('忽略无效板端状态：' + validation.errors.join('；'));
+                return;
+              }
+            }
+            const previousPhase = state.phase;
+            const previousCursor = state.cursor;
+            if (typeof msg.mode === 'string') state.mode = msg.mode;
+            if (typeof msg.phase === 'string') state.phase = msg.phase;
+            if (typeof msg.subphase === 'string') state.subphase = msg.subphase;
+            if (typeof msg.instrument === 'number') state.instrument = msg.instrument;
+            if (typeof msg.octave === 'number') state.octave = msg.octave;
+            if (typeof msg.bpm === 'number') state.bpm = msg.bpm;
+            if (typeof msg.errors === 'number') state.errors = msg.errors;
+            if (typeof msg.elapsed === 'number') state.elapsed = Math.floor(msg.elapsed / 1000);
+            if (Array.isArray(msg.leds)) state.leds = msg.leds;
+            if (Array.isArray(msg.keys)) state.keyStates = msg.keys.slice(0, 8).map(k => k === 'waiting' ? 'waiting' : k === 'holding' ? 'holding' : 'idle');
+            if (typeof msg.knob === 'number') state.knobAngle = msg.knob;
+            if (typeof msg.cursor === 'number') state.cursor = msg.cursor;
+            if (typeof msg.note_ticks === 'number') state.noteTicks = msg.note_ticks;
+            if (typeof msg.note_total_ticks === 'number') state.noteTotalTicks = msg.note_total_ticks;
+            if (typeof msg.score_id === 'string') state.scoreId = msg.score_id;
+            if (typeof msg.score_crc32 === 'string') state.scoreCrc32 = msg.score_crc32;
+            if (typeof msg.volume === 'number') volumeCoordinator.onBoardState(msg.volume);
+            renderStatus();
+            renderKeys();
+            renderLeds();
+            renderKnob();
+            renderVolumes();
+            const resetViewport = globalThis.AboConsoleCore.shouldResetScoreViewport({
+              previousPhase,
+              previousCursor,
+              nextPhase: state.phase,
+              nextCursor: state.cursor
+            });
+            if (resetViewport) resetScoreViewport();
+            else renderScoreMotion();
+            if (state.completionPending && msg.phase === 'standby') {
+              state.completionPending = false;
+              state.resetRequested = false;
+              hideCompletionModal();
+            }
+            renderKnobFeedback();
+            break;
+          case 'input':
+            if (!globalThis.AboConsoleCore.validateInputMessage(msg).ok) return;
+            if (state.lastInputSeq !== null && msg.seq === state.lastInputSeq) return;
+            state.lastInputSeq = msg.seq;
+            if (handleCompletionInput(msg)) return;
+            if (msg.control === 's9' && msg.phase === 'pressed') renderS9Feedback('pressed');
+            else if (msg.control === 's9' && msg.phase === 'released') renderS9Feedback('released');
+            break;
+          case 'judge':
+            if (msg.ok && typeof msg.target === 'number') state.keyStates[msg.target] = 'holding';
+            if (typeof msg.errors === 'number') state.errors = msg.errors;
+            renderStatus();
+            renderKeys();
+            renderScoreMotion();
+            break;
+          case 'result':
+            handleCompletionResult(msg);
+            break;
+          default:
+            break;
+        }
+      }
+
+      const SerialManager = globalThis.AboConsoleCore.createSerialManager({
+        serial: navigator.serial,
+        onState: phase => {
+          state.connected = phase === 'connected';
+          if (phase === 'disconnected') {
+            state.scoreLoaded = false;
+            clearVolumePending();
+            state.volumeInFlight = false;
+            if (state.completionPending) {
+              state.completionPending = false;
+              setCompletionStatus('设备已断开，成绩状态未知');
+              hideCompletionModal();
+            }
+          }
+          renderStatus();
+          renderKnobFeedback();
+        },
+        onMessage: handleBoardMessage,
+        onError: error => {
+          showError('串口读取错误：' + (error.message || '未知'));
+          void SerialManager.disconnect();
+        }
+      });
+
+      /* ---------- 初始化键盘 ---------- */
+      function renderKeyButton(key) {
+        const btn = document.createElement('button');
+        btn.className = 'key';
+        btn.type = 'button';
+        btn.dataset.index = key.index;
+        btn.dataset.id = key.id;
+        const main = key.index === 7 ? key.name : key.solfege;
+        btn.innerHTML = `
+          <span class="key-label">${main}</span>
+          <span class="key-solfege">${key.label}</span>
+        `;
+        return btn;
+      }
+
+      function initKeyboard(containerId) {
+        const container = document.getElementById(containerId);
+        if (!container) return;
+        container.innerHTML = '';
+        KEYS.forEach(key => container.appendChild(renderKeyButton(key)));
+      }
+
+      initKeyboard('keys-grid');
+      initKeyboard('keys-grid-free');
+
+      /* ---------- 工作区切换 ---------- */
+      async function switchWorkspace(name) {
+        if ((name === 'score' || name === 'free') && state.connected) {
+          try {
+            await SerialManager.setMode(name);
+          } catch (error) {
+            showError('模式切换失败：' + (error.message || '未知错误'));
+            return;
+          }
+        }
+        state.workspace = name;
+        $$('.workspace').forEach(el => el.classList.toggle('active', el.id === `workspace-${name}`));
+        $$('.nav-link').forEach(el => {
+          const active = el.dataset.workspace === name;
+          el.classList.toggle('active', active);
+          el.setAttribute('aria-selected', String(active));
+        });
+      }
+
+      $$('.nav-link').forEach(link => {
+        link.addEventListener('click', () => { void switchWorkspace(link.dataset.workspace); });
+      });
+
+      /* ---------- 乐谱显示切换 ---------- */
+      function switchNotation(mode) {
+        state.notation = mode;
+        $$('[data-notation]').forEach(btn => {
+          btn.classList.toggle('active', btn.dataset.notation === mode);
+        });
+        $('#staff-view').classList.toggle('hidden', mode !== 'staff');
+        $('#jianpu-view').classList.toggle('hidden', mode !== 'jianpu');
+        if (mode === 'jianpu') renderJianpu();
+        resetScoreViewport();
+      }
+
+      $$('[data-notation]').forEach(btn => {
+        btn.addEventListener('click', () => switchNotation(btn.dataset.notation));
+      });
+
+      const SCORE_PIXELS_PER_BEAT = 52;
+      const SCORE_START_X = 90;
+
+      function scoreTotalBeats(score = state.score) {
+        return score ? score.notes.reduce((sum, note) => sum + note.b, 0) : 0;
+      }
+
+      function scoreNoteX(index) {
+        if (!state.score) return SCORE_START_X;
+        return SCORE_START_X + state.score.notes.slice(0, index).reduce((sum, note) => sum + note.b * SCORE_PIXELS_PER_BEAT, 0);
+      }
+
+      /* ---------- 简谱渲染 ---------- */
+      function renderJianpu() {
+        const container = $('#jianpu-view');
+        if (!container || !state.score) return;
+        container.innerHTML = '';
+        const solfegeToNumber = ['1', '2', '3', '4', '5', '6', '7'];
+        container.style.width = `${Math.max(640, scoreTotalBeats() * SCORE_PIXELS_PER_BEAT + SCORE_START_X + 40)}px`;
+        state.score.notes.forEach((note, index) => {
+          const el = document.createElement('div');
+          el.className = 'jianpu-note';
+          el.dataset.index = String(index);
+          el.style.width = `${Math.max(28, note.b * SCORE_PIXELS_PER_BEAT)}px`;
+          const num = document.createElement('span');
+          num.textContent = solfegeToNumber[note.n] || '·';
+          el.appendChild(num);
+          if (note.b >= 2) {
+            const line = document.createElement('div');
+            line.className = 'jianpu-underline half';
+            el.appendChild(line);
+          }
+          if (note.b >= 4) {
+            const line = document.createElement('div');
+            line.className = 'jianpu-underline quarter';
+            el.appendChild(line);
+          }
+          container.appendChild(el);
+        });
+      }
+
+      /* ---------- 五线谱渲染 ---------- */
+      function renderStaff() {
+        const staff = $('#staff-view');
+        if (!staff || !state.score) return;
+        staff.querySelectorAll('.staff-note').forEach(el => el.remove());
+        const solfegeLines = { 0: 52, 1: 44, 2: 60, 3: 40, 4: 68, 5: 36, 6: 76 };
+        staff.style.width = `${Math.max(640, scoreTotalBeats() * SCORE_PIXELS_PER_BEAT + SCORE_START_X + 40)}px`;
+        let x = SCORE_START_X;
+        state.score.notes.forEach((note, index) => {
+          const noteWidth = Math.max(28, note.b * SCORE_PIXELS_PER_BEAT);
+          const dot = document.createElement('div');
+          dot.className = 'staff-note';
+          dot.dataset.index = String(index);
+          dot.dataset.beats = String(note.b);
+          dot.style.left = `${x + noteWidth / 2}px`;
+          dot.style.top = `${solfegeLines[note.n]}%`;
+          staff.appendChild(dot);
+          x += noteWidth;
+        });
+      }
+
+      function renderScore() {
+        renderStaff();
+        renderJianpu();
+        renderScoreMotion();
+      }
+
+      function resetScoreViewport() {
+        const stage = $('#score-stage');
+        if (stage) stage.scrollLeft = 0;
+        renderScoreMotion({ immediate: true });
+      }
+
+      function renderScoreMotion({ immediate = false } = {}) {
+        const stage = $('#score-stage');
+        const playhead = $('#score-playhead');
+        const activeTrack = state.notation === 'jianpu'
+          ? $('#jianpu-view.score-track')
+          : $('#staff-view.score-track');
+        if (!stage || !playhead || !activeTrack || !state.score) return;
+
+        const noteNodes = state.notation === 'jianpu'
+          ? $$('#jianpu-view.score-track .jianpu-note')
+          : $$('#staff-view.score-track .staff-note');
+        const noteCenters = noteNodes.map(note => state.notation === 'jianpu'
+          ? note.offsetLeft + note.offsetWidth / 2
+          : note.offsetLeft);
+        if (noteCenters.length === 0) return;
+
+        const lastNote = noteNodes[noteNodes.length - 1];
+        const endX = state.notation === 'jianpu'
+          ? lastNote.offsetLeft + lastNote.offsetWidth
+          : lastNote.offsetLeft + lastNote.offsetWidth / 2;
+        const cursor = Math.max(0, Math.min(noteCenters.length, state.cursor));
+        const ratio = state.phase === 'playing' && state.subphase !== 'waiting' && state.noteTotalTicks > 0
+          ? Math.max(0, Math.min(1, state.noteTicks / state.noteTotalTicks))
+          : 0;
+        const paddingLeft = Number.parseFloat(getComputedStyle(stage).paddingLeft) || 0;
+        const position = globalThis.AboConsoleCore.computeScoreVisualPosition({
+          viewportWidth: stage.clientWidth,
+          paddingLeft,
+          noteCenters,
+          cursor,
+          ratio,
+          endX
+        });
+
+        if (immediate) {
+          const previousTransition = activeTrack.style.transition;
+          activeTrack.style.transition = 'none';
+          activeTrack.style.transform = `translate3d(${position.translateX}px, 0, 0)`;
+          void activeTrack.offsetWidth;
+          activeTrack.style.transition = previousTransition;
+        } else {
+          activeTrack.style.transform = `translate3d(${position.translateX}px, 0, 0)`;
+        }
+      }
+
+      window.addEventListener('resize', () => renderScoreMotion({ immediate: true }));
+
+      /* ---------- 状态面板渲染 ---------- */
+      function renderStatus() {
+        const connText = state.connected ? '已连接' : '未连接';
+        $('#st-connection').textContent = connText;
+        $('#st-connection-free').textContent = connText;
+        $('#st-instrument').textContent = INSTRUMENTS[state.instrument] || '—';
+        $('#st-octave').textContent = `C${state.octave}`;
+        $('#st-errors').textContent = String(state.errors);
+        $('#st-time').textContent = formatTime(state.elapsed);
+        $('#st-instrument-free').textContent = INSTRUMENTS[state.instrument] || '钢琴';
+        $('#st-octave-free').textContent = `C${state.octave}`;
+        $('#score-title').textContent = state.scoreLoaded ? state.score.title : '未装载曲目';
+        $('#score-bpm').textContent = state.scoreLoaded ? `BPM ${state.score.bpm}` : '—';
+      }
+
+      function formatTime(seconds) {
+        const m = Math.floor(seconds / 60).toString().padStart(2, '0');
+        const s = Math.floor(seconds % 60).toString().padStart(2, '0');
+        return `${m}:${s}`;
+      }
+
+      /* ---------- 键盘光效渲染 ---------- */
+      function renderKeys() {
+        $$('.key').forEach(btn => {
+          const idx = Number(btn.dataset.index);
+          const st = state.keyStates[idx];
+          btn.classList.remove('waiting', 'holding', 'active');
+          if (st === 'waiting') btn.classList.add('waiting');
+          if (st === 'holding') btn.classList.add('holding');
+          if (st === 'active') btn.classList.add('active');
+        });
+      }
+
+      function renderLeds() {
+        $$('.led').forEach(led => {
+          const idx = Number(led.dataset.index);
+          led.classList.toggle('on', state.leds[idx]);
+        });
+      }
+
+      /* ---------- 旋钮渲染 ---------- */
+      function renderKnob() {
+        $$('[data-control="s9"] .knob-tick').forEach(tick => {
+          tick.style.setProperty('--knob-angle', `${state.knobAngle}deg`);
+        });
+      }
+
+      /* ---------- S9 实体按压反馈 ---------- */
+      const S9_PULSE_MIN_MS = 120; // 120ms minimum visible pulse
+      let s9PulseTimer = null;
+      let s9PulseUntil = 0;
+
+      function renderKnobFeedback() {
+        const feedbackText = state.phase === 'playing' ? '按压暂停' : state.phase === 'finished' ? '按任意键返回待机' : '按压开始';
+        $$('[data-control="s9"]').forEach(knob => {
+          const feedback = knob.querySelector('.knob-state');
+          if (!knob.classList.contains('s9-pressed') && feedback) feedback.textContent = feedbackText;
+        });
+      }
+
+      function restoreS9Feedback() {
+        state.s9Pressed = false;
+        $$('[data-control="s9"]').forEach(knob => {
+          knob.classList.remove('s9-pressed', 'black-feedback');
+          const center = knob.querySelector('.knob-center');
+          if (center) center.textContent = 'S9';
+        });
+        renderKnobFeedback();
+      }
+
+      function renderS9Feedback(phase) {
+        if (phase === 'pressed') {
+          state.s9Pressed = true;
+          s9PulseUntil = Date.now() + S9_PULSE_MIN_MS;
+          if (s9PulseTimer) clearTimeout(s9PulseTimer);
+          $$('[data-control="s9"]').forEach(knob => {
+            knob.classList.add('s9-pressed', 'black-feedback');
+            const center = knob.querySelector('.knob-center');
+            const feedback = knob.querySelector('.knob-state');
+            if (center) center.textContent = '按压';
+            if (feedback) feedback.textContent = '按压';
+          });
+          s9PulseTimer = setTimeout(() => {
+            if (!state.s9Pressed) restoreS9Feedback();
+          }, S9_PULSE_MIN_MS);
+          return;
+        }
+        state.s9Pressed = false;
+        const remaining = Math.max(0, s9PulseUntil - Date.now());
+        if (s9PulseTimer) clearTimeout(s9PulseTimer);
+        s9PulseTimer = setTimeout(restoreS9Feedback, remaining);
+      }
+
+      /* ---------- 音量 ---------- */
+      function renderVolumes() {
+        $$('input[type="range"]').forEach(input => {
+          input.value = String(state.volume);
+          const display = input.nextElementSibling;
+          if (display) display.textContent = String(state.volume);
+        });
+      }
+
+      function clearVolumePending() {
+        volumeCoordinator.reset();
+      }
+
+      // 80ms debounce is implemented by the shared volume coordinator.
+      $$('input[type="range"]').forEach(input => {
+        input.addEventListener('input', () => {
+          volumeCoordinator.input(Number(input.value));
+        });
+      });
+
+      /* ---------- 曲终自定义提示 ---------- */
+      function setCompletionStatus(text) {
+        const status = $('#completion-status');
+        if (status) status.textContent = text;
+      }
+
+      function showCompletionModal() {
+        const modal = $('#completion-modal');
+        const summary = $('#completion-summary');
+        if (summary) summary.textContent = `错误：${state.errors} 次 · 用时：${formatTime(state.elapsed)}`;
+        setCompletionStatus('按任意键返回待机');
+        if (modal) modal.classList.remove('hidden');
+      }
+
+      function hideCompletionModal() {
+        const modal = $('#completion-modal');
+        if (modal) modal.classList.add('hidden');
+      }
+
+      async function requestCompletionReset() {
+        if (!state.completionPending || state.resetRequested) return;
+        if (state.phase === 'standby') {
+          state.completionPending = false;
+          state.resetRequested = false;
+          hideCompletionModal();
+          return;
+        }
+        if (!state.connected) {
+          setCompletionStatus('设备未连接，成绩状态未知');
+          return;
+        }
+        state.resetRequested = true;
+        setCompletionStatus('正在等待设备返回待机…');
+        try {
+          await SerialManager.resetTransport();
+        } catch (error) {
+          state.resetRequested = false;
+          setCompletionStatus('返回待机失败，设备状态未知');
+          showError('曲终复位失败：' + (error.message || '未知错误'));
+        }
+      }
+
+      $('#completion-reset').addEventListener('click', () => { void requestCompletionReset(); });
+
+      document.addEventListener('keydown', event => {
+        if (state.completionPending && !event.repeat && !event.ctrlKey && !event.altKey && !event.metaKey) {
+          event.preventDefault();
+          void requestCompletionReset();
+        }
+      });
+
+      /* ---------- 乐谱导入 ---------- */
+      const dropZone = $('#import-drop');
+      const fileInput = $('#file-input');
+      const globalError = $('#global-error');
+
+      function showError(msg) {
+        if (!msg) {
+          hideError();
+          return;
+        }
+        globalError.textContent = msg;
+        globalError.classList.remove('hidden');
+      }
+
+      function hideError() {
+        globalError.textContent = '';
+        globalError.classList.add('hidden');
+      }
+
+      async function copyAiPrompt() {
+        const button = $('#ai-prompt-copy');
+        const prompt = $('#ai-score-prompt-text');
+        if (!button || !prompt) return;
+        try {
+          if (!navigator.clipboard || typeof navigator.clipboard.writeText !== 'function') {
+            throw new Error('clipboard_unavailable');
+          }
+          await navigator.clipboard.writeText(prompt.textContent.trim());
+          button.textContent = '已复制';
+          setTimeout(() => { button.textContent = '复制'; }, 1500);
+        } catch (_) {
+          button.textContent = '请手动复制';
+          showError('提示词复制失败，请手动选择提示词文本复制。');
+        }
+      }
+
+      $('#ai-prompt-copy').addEventListener('click', () => { void copyAiPrompt(); });
+
+      function validateScore(json) {
+        const result = globalThis.AboConsoleCore.validateScore(json);
+        return result.ok ? null : result.errors[0];
+      }
+
+      function addToLibrary(score) {
+        state.library.push({ ...score, source: '导入' });
+        renderLibrary();
+      }
+
+      function renderLibrary() {
+        const container = $('#library-items');
+        container.innerHTML = '';
+        state.library.forEach((score, idx) => {
+        const item = document.createElement('div');
+        item.className = 'library-item';
+          const info = document.createElement('div');
+          info.className = 'library-item-info';
+          const title = document.createElement('div');
+          title.className = 'library-item-title';
+          title.textContent = score.title;
+          const meta = document.createElement('div');
+          meta.className = 'library-item-meta';
+          meta.textContent = `BPM ${score.bpm} · ${score.notes.length} 音符 · ${score.source}`;
+          info.append(title, meta);
+          const button = document.createElement('button');
+          button.className = 'btn-pill btn-primary';
+          button.dataset.load = String(idx);
+          button.type = 'button';
+          button.textContent = '装载';
+          item.append(info, button);
+          container.appendChild(item);
+        });
+      }
+
+      function handleFile(file) {
+        hideError();
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          try {
+            const json = JSON.parse(e.target.result);
+            const err = validateScore(json);
+            if (err) { showError(err); return; }
+            addToLibrary(json);
+          } catch (ex) {
+            showError('JSON 解析失败：' + ex.message);
+          }
+        };
+        reader.readAsText(file);
+      }
+
+      $('#btn-select-file').addEventListener('click', () => fileInput.click());
+      fileInput.addEventListener('change', () => handleFile(fileInput.files[0]));
+
+      dropZone.addEventListener('click', () => fileInput.click());
+      dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
+      dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+      dropZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropZone.classList.remove('dragover');
+        handleFile(e.dataTransfer.files[0]);
+      });
+
+      $('#library-items').addEventListener('click', async (e) => {
+        const btn = e.target.closest('[data-load]');
+        if (!btn) return;
+        const idx = Number(btn.dataset.load);
+        const score = state.library[idx];
+        if (!score) return;
+
+        if (!state.connected) {
+          showError('请先连接键盘后再装载乐谱');
+          return;
+        }
+
+        try {
+          await SerialManager.uploadScore(score);
+          state.score = score;
+          state.scoreLoaded = true;
+          state.scoreId = score.id;
+          state.scoreCrc32 = globalThis.AboConsoleCore.crc32Hex(globalThis.AboConsoleCore.canonicalScoreBytes(score));
+          renderScore();
+          resetScoreViewport();
+          switchWorkspace('score');
+        } catch (err) {
+          showError('乐谱下发失败：' + err.message);
+        }
+      });
+
+      /* ---------- 装载乐谱按钮：切到乐谱库 ---------- */
+      $('#btn-load-score').addEventListener('click', () => switchWorkspace('import'));
+
+      /* ---------- Web Serial 连接 ---------- */
+      $$('.btn-connect').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          if (!SerialManager.isSupported()) {
+            showError('当前浏览器不支持 Web Serial，请使用 Chrome 或 Edge。');
+            return;
+          }
+          try {
+            if (state.connected) {
+              await SerialManager.disconnect();
+            } else {
+              await SerialManager.connect();
+              showError('');
+            }
+          } catch (err) {
+            if (AboConsoleCore.isSerialSelectionCancelled(err)) showError('');
+            else showError(err.message);
+            state.connected = false;
+            renderStatus();
+          }
+        });
+      });
+
+      // 监听断线（USB 拔出等）
+      if (SerialManager.isSupported()) {
+        navigator.serial.addEventListener('disconnect', (e) => {
+          if (SerialManager.port === e.target) {
+            SerialManager.disconnect();
+          }
+        });
+      }
+
+      /* ---------- 模拟：鼠标点击键盘反馈 ---------- */
+      document.addEventListener('pointerdown', (e) => {
+        const key = e.target.closest('.key');
+        if (!key) return;
+        const idx = Number(key.dataset.index);
+        state.keyStates[idx] = 'active';
+        renderKeys();
+      });
+
+      document.addEventListener('pointerup', () => {
+        state.keyStates.fill('idle');
+        renderKeys();
+      });
+
+      document.addEventListener('pointerleave', () => {
+        state.keyStates.fill('idle');
+        renderKeys();
+      });
+
+      /* ---------- 初始渲染 ---------- */
+      renderStatus();
+      renderScore();
+      renderLibrary();
+      renderKeys();
+      renderLeds();
+      renderKnob();
+      renderVolumes();
+      renderKnobFeedback();
+    })();
+  </script>
+</body>
+</html>

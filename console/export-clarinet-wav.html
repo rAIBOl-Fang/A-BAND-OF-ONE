@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>A Band of One · 单簧管 WAV 导出</title>
+  <style>
+    :root { color-scheme:dark; --bg:#11131a; --panel:#1b202c; --line:#3b4961; --ink:#edf5f8; --muted:#aab7c5; --good:#78c98d; --bad:#e3776c; }
+    * { box-sizing:border-box } body { margin:0; min-height:100vh; color:var(--ink); background:radial-gradient(circle at top,#223448,#11131a 62%); font:16px/1.5 system-ui,"Microsoft YaHei",sans-serif } main { width:min(960px,calc(100% - 32px)); margin:auto; padding:40px 0 } h1 { margin:0 0 8px } .lead,.muted { color:var(--muted) } .panel { margin-top:18px; padding:18px; border:1px solid var(--line); border-radius:16px; background:color-mix(in srgb,var(--panel) 92%,black) } table { width:100%; border-collapse:collapse; margin-top:10px } th,td { padding:10px 8px; text-align:left; border-bottom:1px solid var(--line) } th { color:#b6e9f4 } button { border:1px solid #537087; border-radius:8px; background:#dbeaf0; color:#15212b; padding:9px 12px; font:600 14px system-ui,"Microsoft YaHei",sans-serif; cursor:pointer } button:hover { background:#9bd9e7 } button:disabled { opacity:.55; cursor:wait } #status { min-height:1.5em } .good { color:var(--good) } .bad { color:var(--bad) } code { color:#a9e2ed } @media(max-width:650px) { main{width:min(100% - 20px,960px);padding:24px 0}.panel{padding:14px}table{font-size:13px}th,td{padding:8px 4px} }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>单簧管 MP3 → WAV 导出</h1>
+    <p class="lead">每次只导出一枚：浏览器读取项目内 MP3，在内存中转为 48kHz / 单声道 / PCM16 / 0.8 秒 WAV，然后下载。不会修改原 MP3、不会直接写入项目目录。</p>
+    <section class="panel"><b>操作：</b>依次点击九个“导出 WAV”；浏览器下载完成后，把文件移动到 <code>firmware/course-motherboard/abo_assets/raw/clarinet-tonejs/</code>。九个文件必须全部到位才进入 EIAD 编码。</section>
+    <section class="panel"><table><thead><tr><th>根音</th><th>源 MP3</th><th>导出 WAV</th><th>状态</th></tr></thead><tbody id="rows"></tbody></table></section>
+    <section class="panel"><b>全局状态：</b><span id="status" class="muted">等待导出。</span><p class="muted">输出片段保留前 0.8 秒，后续 EIAD 阶段才按约 0.40–0.76 秒烘焙 20ms 交叉淡化循环。若下载被拦截，请直接再次点击单个按钮。</p></section>
+  </main>
+  <script id="abo-clarinet-wav-export-core">
+    (function () {
+      var BASE = '../firmware/course-motherboard/abo_assets/incoming/tonejs-clarinet-probe/';
+      var EXPORTS = [['D3','d3'],['F3','f3'],['A#3','as3'],['D4','d4'],['F4','f4'],['A#4','as4'],['D5','d5'],['F5','f5'],['A#5','as5']].map(function (entry) {
+        return { note:entry[0], source:entry[0].replace('#','s')+'.mp3', output:'clarinet_'+entry[1]+'.wav', seconds:0.8, url:BASE+entry[0].replace('#','s')+'.mp3' };
+      });
+      function toMono48k(channels, sourceRate, seconds) {
+        var count=Math.round(seconds*48000), output=new Float32Array(count);
+        for(var target=0;target<count;target++){ var source=target*sourceRate/48000, left=Math.min(Math.floor(source),channels[0].length-1), right=Math.min(left+1,channels[0].length-1), mix=0; for(var channel=0;channel<channels.length;channel++){ mix+=(channels[channel][left]+(channels[channel][right]-channels[channel][left])*(source-left))/channels.length; } output[target]=mix; }
+        return output;
+      }
+      function wav16(samples) { var buffer=new ArrayBuffer(44+samples.length*2), view=new DataView(buffer), offset=0; function text(value){for(var i=0;i<value.length;i++)view.setUint8(offset++,value.charCodeAt(i));} function u32(value){view.setUint32(offset,value,true);offset+=4;} function u16(value){view.setUint16(offset,value,true);offset+=2;} text('RIFF');u32(36+samples.length*2);text('WAVEfmt ');u32(16);u16(1);u16(1);u32(48000);u32(96000);u16(2);u16(16);text('data');u32(samples.length*2);for(var i=0;i<samples.length;i++){var value=Math.max(-1,Math.min(1,samples[i]));view.setInt16(offset,value<0?Math.round(value*32768):Math.round(value*32767),true);offset+=2;}return buffer; }
+      window.AboClarinetWavExportCore={ EXPORTS:EXPORTS, toMono48k:toMono48k, wav16:wav16 };
+    })();
+  </script>
+  <script>
+    (function(){ var core=window.AboClarinetWavExportCore, rows=document.getElementById('rows'), status=document.getElementById('status'), context=null; function getContext(){if(!context){var AudioCtx=window.AudioContext||window.webkitAudioContext;context=new AudioCtx();}return context;} async function exportOne(asset,button,rowStatus){button.disabled=true;rowStatus.className='muted';rowStatus.textContent='解码中…';try{var response=await fetch(asset.url);if(!response.ok)throw new Error('HTTP '+response.status);var buffer=await getContext().decodeAudioData(await response.arrayBuffer()), channels=[];for(var channel=0;channel<buffer.numberOfChannels;channel++)channels.push(buffer.getChannelData(channel));var pcm=core.toMono48k(channels,buffer.sampleRate,asset.seconds), blob=new Blob([core.wav16(pcm)],{type:'audio/wav'}), link=document.createElement('a');link.href=URL.createObjectURL(blob);link.download=asset.output;link.click();setTimeout(function(){URL.revokeObjectURL(link.href);},1000);rowStatus.className='good';rowStatus.textContent='已下载；请移入 raw 目录。';status.className='good';status.textContent=asset.output+' 已导出。';}catch(error){rowStatus.className='bad';rowStatus.textContent='失败：'+error.message;status.className='bad';status.textContent='导出失败，请确认使用 http://127.0.0.1:8800 打开。';}finally{button.disabled=false;}}
+      core.EXPORTS.forEach(function(asset){var row=document.createElement('tr'),button=document.createElement('button'),rowStatus=document.createElement('td');button.type='button';button.textContent='导出 WAV';button.addEventListener('click',function(){exportOne(asset,button,rowStatus);});row.innerHTML='<td>'+asset.note+'</td><td>'+asset.source+'</td><td></td>';row.children[2].appendChild(button);rowStatus.className='muted';rowStatus.textContent='未导出';row.appendChild(rowStatus);rows.appendChild(row);});
+    })();
+  </script>
+</body>
+</html>

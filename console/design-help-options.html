@@ -1,0 +1,454 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>帮助卡优化方案对比 · A/B/C</title>
+  <style>
+    /* ===== 与 console/index.html 一致的设计变量 ===== */
+    :root {
+      --color-solder-orange: #ff6c2f;
+      --color-bone: #d7cdb8;
+      --color-signal-white: #ffffff;
+      --color-linen-gray: #e5e7eb;
+      --color-fog: #c2c2c2;
+      --color-soft-mist: #dddee2;
+      --color-ash: #a3a3a3;
+      --color-carbon-black: #000000;
+      --color-deep-charcoal: #191919;
+
+      --font-suisse-intl: 'Suisse Intl', 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      --font-suisse-mono: 'Suisse Intl Mono', 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+      --text-caption: 12px;
+      --text-body: 16px;
+      --text-subheading: 18px;
+      --text-heading-sm: 20px;
+      --text-heading: 24px;
+
+      --radius-card: 24px;
+      --radius-button: 9999px;
+      --radius-navpill: 64px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: var(--color-linen-gray);
+      color: var(--color-carbon-black);
+      font-family: var(--font-suisse-intl);
+      font-size: var(--text-body);
+      line-height: 1.5;
+    }
+
+    .page { max-width: 1180px; margin: 0 auto; padding: 32px 24px 96px; }
+
+    /* ===== 导航胶囊（仅作上下文参照） ===== */
+    .nav-pill {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      max-width: 720px;
+      margin: 0 auto 40px;
+      padding: 14px 28px;
+      background: var(--color-deep-charcoal);
+      border-radius: var(--radius-navpill);
+      color: var(--color-signal-white);
+    }
+    .brand { font-size: 18px; font-weight: 500; letter-spacing: -0.2px; }
+    .nav-links { display: flex; gap: 8px; }
+    .nav-link {
+      padding: 8px 16px;
+      border-radius: var(--radius-button);
+      font-family: var(--font-suisse-mono);
+      font-size: var(--text-caption);
+      letter-spacing: 0.4px;
+      opacity: 0.7;
+    }
+    .nav-link.active { opacity: 1; background: rgba(255,255,255,0.12); }
+
+    /* ===== 方案标注 ===== */
+    .option-header {
+      display: flex;
+      align-items: baseline;
+      gap: 14px;
+      margin: 56px 0 16px;
+      flex-wrap: wrap;
+    }
+    .option-header:first-of-type { margin-top: 0; }
+    .option-tag {
+      font-family: var(--font-suisse-mono);
+      font-size: var(--text-caption);
+      letter-spacing: 0.4px;
+      padding: 6px 14px;
+      border-radius: var(--radius-button);
+      background: var(--color-deep-charcoal);
+      color: var(--color-signal-white);
+    }
+    .option-name { font-size: var(--text-heading-sm); font-weight: 500; letter-spacing: -0.4px; }
+    .option-why { color: #6b6b6b; font-size: 15px; }
+
+    /* ===== 卡片 ===== */
+    .card {
+      background: var(--color-signal-white);
+      border-radius: var(--radius-card);
+      padding: 32px;
+    }
+    .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    .card-title { font-size: var(--text-heading); font-weight: 500; letter-spacing: -0.48px; margin: 0; }
+    .card-meta { font-family: var(--font-suisse-mono); font-size: var(--text-caption); color: var(--color-ash); margin-top: 4px; }
+
+    /* ===== 拖放区 ===== */
+    .import-drop {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      padding: 40px 24px;
+      border: 2px dashed var(--color-fog);
+      border-radius: 16px;
+      text-align: center;
+    }
+    .import-drop .drop-title { font-size: var(--text-heading-sm); font-weight: 500; letter-spacing: -0.4px; }
+    .import-drop .drop-meta { font-family: var(--font-suisse-mono); font-size: var(--text-caption); color: var(--color-ash); }
+
+    .btn-pill {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 10px 22px;
+      border-radius: var(--radius-button);
+      font-family: var(--font-suisse-mono);
+      font-size: var(--text-caption);
+      letter-spacing: 0.4px;
+      border: none;
+      cursor: pointer;
+    }
+    .btn-primary { background: var(--color-solder-orange); color: var(--color-signal-white); }
+    .btn-ghost { background: transparent; color: var(--color-carbon-black); border: 1px solid var(--color-carbon-black); }
+    .btn-copy {
+      padding: 6px 14px;
+      font-size: 11px;
+      background: rgba(255,108,47,0.16);
+      color: var(--color-solder-orange);
+      border: none;
+    }
+
+    /* ===== 帮助卡通用 ===== */
+    .ai-help { margin-top: 28px; }
+    .ai-help-title {
+      margin: 0 0 18px;
+      font-size: var(--text-subheading);
+      font-weight: 500;
+      letter-spacing: -0.3px;
+    }
+    .ai-help-footnote {
+      margin: 18px 0 0;
+      font-size: 14px;
+      color: #6b6b6b;
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+    }
+    .ai-help-footnote .dot { color: var(--color-solder-orange); font-family: var(--font-suisse-mono); }
+
+    /* ===== 步骤 ===== */
+    .steps { display: flex; flex-direction: column; gap: 18px; }
+    .step { display: grid; grid-template-columns: 44px 1fr; gap: 14px; align-items: start; }
+    .step-num {
+      font-family: var(--font-suisse-mono);
+      font-size: var(--text-caption);
+      color: var(--color-solder-orange);
+      border: 1px solid rgba(255,108,47,0.4);
+      border-radius: var(--radius-button);
+      padding: 4px 0;
+      text-align: center;
+      margin-top: 2px;
+    }
+    .step-title { font-weight: 500; font-size: var(--text-body); }
+    .step-desc { color: #6b6b6b; font-size: 14px; margin-top: 2px; }
+
+    /* ===== 提示词代码块 ===== */
+    .prompt-block {
+      position: relative;
+      margin-top: 10px;
+      background: var(--color-deep-charcoal);
+      border-radius: 14px;
+      padding: 18px 20px;
+      padding-top: 40px;
+    }
+    .prompt-block .btn-copy { position: absolute; top: 10px; right: 10px; }
+    .prompt-text {
+      margin: 0;
+      font-family: var(--font-suisse-mono);
+      font-size: 13.5px;
+      line-height: 1.75;
+      color: var(--color-bone);
+    }
+    .prompt-text .field { color: var(--color-signal-white); }
+    .prompt-label {
+      position: absolute;
+      top: 14px;
+      left: 20px;
+      font-family: var(--font-suisse-mono);
+      font-size: 11px;
+      letter-spacing: 0.6px;
+      color: rgba(255,255,255,0.45);
+      text-transform: uppercase;
+    }
+
+    /* ===== 方案 B 折叠条 ===== */
+    .disclosure {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      width: 100%;
+      margin-top: 20px;
+      padding: 14px 20px;
+      background: var(--color-linen-gray);
+      border: none;
+      border-radius: 14px;
+      cursor: pointer;
+      font-family: var(--font-suisse-intl);
+      font-size: 15px;
+      color: var(--color-carbon-black);
+      text-align: left;
+    }
+    .disclosure .info-icon {
+      width: 20px; height: 20px;
+      border-radius: 50%;
+      background: var(--color-solder-orange);
+      color: #fff;
+      font-family: var(--font-suisse-mono);
+      font-size: 12px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex: none;
+    }
+    .disclosure .chevron { margin-left: auto; color: var(--color-ash); font-family: var(--font-suisse-mono); }
+
+    /* ===== 方案 C 双栏 ===== */
+    .help-cols {
+      display: grid;
+      grid-template-columns: 1fr 1.1fr;
+      gap: 28px;
+      margin-top: 28px;
+    }
+    .help-cols .col-steps { padding-right: 28px; border-right: 1px solid var(--color-linen-gray); }
+    @media (max-width: 860px) {
+      .help-cols { grid-template-columns: 1fr; }
+      .help-cols .col-steps { padding-right: 0; border-right: none; }
+    }
+
+    /* ===== 曲库 ===== */
+    .library-list { margin-top: 28px; }
+    .library-list h3 { margin: 0 0 4px; font-size: var(--text-subheading); font-weight: 500; }
+    .library-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 14px 16px;
+      border: 1px solid var(--color-linen-gray);
+      border-radius: 12px;
+      margin-top: 12px;
+    }
+    .library-item-title { font-size: var(--text-subheading); font-weight: 500; }
+    .library-item-meta { font-family: var(--font-suisse-mono); font-size: var(--text-caption); color: var(--color-ash); margin-top: 2px; }
+
+    .page-intro { color: #555; max-width: 760px; margin: 0 auto 8px; text-align: center; }
+    .page-intro code { font-family: var(--font-suisse-mono); font-size: 13px; }
+  </style>
+</head>
+<body>
+  <div class="page">
+
+    <nav class="nav-pill" aria-label="工作区（示意）">
+      <div class="brand">A Band of One</div>
+      <div class="nav-links">
+        <span class="nav-link">跟谱练习</span>
+        <span class="nav-link">自由演奏</span>
+        <span class="nav-link active">乐谱库与导入</span>
+      </div>
+    </nav>
+
+    <p class="page-intro">本页为“如何用 AI 生成乐谱文件”帮助卡的三个优化方向，均使用真实规范 1:1 渲染。提示词原文、字段与 <code>网页不调用 AI 服务</code> 的边界保持不变，只调整呈现层级。</p>
+
+    <!-- ================= 方案 A ================= -->
+    <div class="option-header">
+      <span class="option-tag">方案 A</span>
+      <span class="option-name">三步流程式</span>
+      <span class="option-why">步骤编号建立阅读顺序；提示词改为深色代码块 + 复制按钮，从“警告条”变成“可执行物料”</span>
+    </div>
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <h2 class="card-title">乐谱库与导入</h2>
+          <div class="card-meta">仅接受 ABO.SCORE V1 JSON · 导入后需手动装载</div>
+        </div>
+      </div>
+
+      <div class="import-drop">
+        <div class="drop-title">拖放乐谱文件到此处</div>
+        <div class="drop-meta">或点击选择本地 ABO.SCORE 文件</div>
+        <button class="btn-pill btn-ghost" type="button">选择文件</button>
+      </div>
+
+      <section class="ai-help">
+        <h3 class="ai-help-title">没有乐谱文件？用 AI 生成</h3>
+        <div class="steps">
+          <div class="step">
+            <span class="step-num">01</span>
+            <div>
+              <div class="step-title">准备乐谱图片</div>
+              <div class="step-desc">清晰、正向的单声部五线谱照片或截图，一次一首。</div>
+            </div>
+          </div>
+          <div class="step">
+            <span class="step-num">02</span>
+            <div>
+              <div class="step-title">把提示词发给支持识图的 AI</div>
+              <div class="prompt-block">
+                <span class="prompt-label">提示词 · PROMPT</span>
+                <button class="btn-pill btn-copy" type="button">复制</button>
+                <p class="prompt-text">“输出 <span class="field">abo.score v1</span> JSON，字段为 <span class="field">schema、version、id、title、bpm、notes</span>，音符使用 <span class="field">{n,b}</span>（do–si 对应 0–6，b 为拍数）。遇到无法辨认、和弦、升降音或休止符时列出并确认，不要猜测；只输出 JSON。”</p>
+              </div>
+            </div>
+          </div>
+          <div class="step">
+            <span class="step-num">03</span>
+            <div>
+              <div class="step-title">保存并人工核对</div>
+              <div class="step-desc">存为 UTF-8 的「曲名.abo.score.json」，先核对音符、节拍和 BPM，再拖入上方导入。</div>
+            </div>
+          </div>
+        </div>
+        <p class="ai-help-footnote"><span class="dot">·</span>网页不调用 AI 服务，所有生成都在你自己的 AI 工具中完成。</p>
+      </section>
+
+      <div class="library-list">
+        <h3>会话曲库</h3>
+        <div class="library-item">
+          <div>
+            <div class="library-item-title">小星星</div>
+            <div class="library-item-meta">BPM 90 · 42 音符 · 内置</div>
+          </div>
+          <button class="btn-pill btn-primary" type="button">装载</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================= 方案 B ================= -->
+    <div class="option-header">
+      <span class="option-tag">方案 B</span>
+      <span class="option-name">折叠收纳式</span>
+      <span class="option-why">帮助卡默认收成一行，页面焦点留给拖放区与曲库；点击展开内容与方案 A 相同</span>
+    </div>
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <h2 class="card-title">乐谱库与导入</h2>
+          <div class="card-meta">仅接受 ABO.SCORE V1 JSON · 导入后需手动装载</div>
+        </div>
+      </div>
+
+      <div class="import-drop" style="padding:56px 24px;">
+        <div class="drop-title">拖放乐谱文件到此处</div>
+        <div class="drop-meta">或点击选择本地 ABO.SCORE 文件</div>
+        <button class="btn-pill btn-ghost" type="button">选择文件</button>
+      </div>
+
+      <button class="disclosure" type="button">
+        <span class="info-icon">i</span>
+        没有乐谱文件？查看如何用 AI 生成
+        <span class="chevron">▾</span>
+      </button>
+
+      <div class="library-list">
+        <h3>会话曲库</h3>
+        <div class="library-item">
+          <div>
+            <div class="library-item-title">小星星</div>
+            <div class="library-item-meta">BPM 90 · 42 音符 · 内置</div>
+          </div>
+          <button class="btn-pill btn-primary" type="button">装载</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================= 方案 C ================= -->
+    <div class="option-header">
+      <span class="option-tag">方案 C</span>
+      <span class="option-name">左右双栏式</span>
+      <span class="option-why">左栏讲步骤、右栏放提示词代码卡，一次看完不滚动；适合宽屏</span>
+    </div>
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <h2 class="card-title">乐谱库与导入</h2>
+          <div class="card-meta">仅接受 ABO.SCORE V1 JSON · 导入后需手动装载</div>
+        </div>
+      </div>
+
+      <div class="import-drop">
+        <div class="drop-title">拖放乐谱文件到此处</div>
+        <div class="drop-meta">或点击选择本地 ABO.SCORE 文件</div>
+        <button class="btn-pill btn-ghost" type="button">选择文件</button>
+      </div>
+
+      <section class="ai-help">
+        <h3 class="ai-help-title">没有乐谱文件？用 AI 生成</h3>
+        <div class="help-cols">
+          <div class="col-steps">
+            <div class="steps">
+              <div class="step">
+                <span class="step-num">01</span>
+                <div>
+                  <div class="step-title">准备乐谱图片</div>
+                  <div class="step-desc">清晰、正向的单声部五线谱照片或截图，一次一首。</div>
+                </div>
+              </div>
+              <div class="step">
+                <span class="step-num">02</span>
+                <div>
+                  <div class="step-title">把右侧提示词发给支持识图的 AI</div>
+                  <div class="step-desc">连同乐谱图片一起发送。</div>
+                </div>
+              </div>
+              <div class="step">
+                <span class="step-num">03</span>
+                <div>
+                  <div class="step-title">保存并人工核对</div>
+                  <div class="step-desc">存为 UTF-8 的「曲名.abo.score.json」，核对音符、节拍和 BPM。</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col-prompt">
+            <div class="prompt-block" style="margin-top:0;">
+              <span class="prompt-label">提示词 · PROMPT</span>
+              <button class="btn-pill btn-copy" type="button">复制</button>
+              <p class="prompt-text">“输出 <span class="field">abo.score v1</span> JSON，字段为 <span class="field">schema、version、id、title、bpm、notes</span>，音符使用 <span class="field">{n,b}</span>（do–si 对应 0–6，b 为拍数）。遇到无法辨认、和弦、升降音或休止符时列出并确认，不要猜测；只输出 JSON。”</p>
+            </div>
+          </div>
+        </div>
+        <p class="ai-help-footnote"><span class="dot">·</span>网页不调用 AI 服务，所有生成都在你自己的 AI 工具中完成。</p>
+      </section>
+
+      <div class="library-list">
+        <h3>会话曲库</h3>
+        <div class="library-item">
+          <div>
+            <div class="library-item-title">小星星</div>
+            <div class="library-item-meta">BPM 90 · 42 音符 · 内置</div>
+          </div>
+          <button class="btn-pill btn-primary" type="button">装载</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</body>
+</html>

@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>A Band of One · P1 声部试听</title>
+  <style>
+    :root { color-scheme: dark; font-family:system-ui,"Microsoft YaHei",sans-serif; background:#11130f; color:#f5f0e5; }
+    body { max-width:1080px; margin:0 auto; padding:32px 18px 52px; }
+    h1 { margin:0 0 8px; } p { line-height:1.65; color:#c9c2b2; }
+    .notice,.panel { border:1px solid #4c412e; background:#201d16; border-radius:16px; padding:18px; margin-top:18px; }
+    .notice { border-left:4px solid #d89a33; } .toolbar { display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
+    button { color:#221c12; background:#f4ead9; border:1px solid #b69a6f; border-radius:10px; padding:11px 14px; font:inherit; font-weight:700; cursor:pointer; }
+    button.active { background:#b7e0f1; border-color:#69b5d7; } button:focus-visible { outline:3px solid #efb24d; outline-offset:2px; }
+    .keys { display:grid; grid-template-columns:repeat(7,minmax(72px,1fr)); gap:10px; margin-top:18px; }
+    .key { min-height:132px; display:flex; flex-direction:column; justify-content:center; gap:5px; font-size:28px; }
+    .key small { color:#6f5d43; font-size:16px; } .key kbd { align-self:center; font-size:13px; border:1px solid #8e806b; border-radius:5px; padding:1px 5px; }
+    .meta { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-top:16px; } .meta div { border-left:3px solid #d89a33; padding-left:10px; color:#c9c2b2; } .meta strong { display:block; color:#fff5df; font-size:18px; }
+    #status { min-height:1.6em; color:#a8dfb6; } @media(max-width:620px){.keys{grid-template-columns:repeat(2,1fr)}.meta{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+  <h1>P1 声部试听 Demo</h1>
+  <p>直接读取当前 23 枚 EIAD。按住音键（或键盘数字 1–7）保持循环；松开进入淡出，因此短按和长按走同一条声部路径。</p>
+  <p class="notice">请通过 <code>http://127.0.0.1:8800/console/demo-p1-voice.html</code> 打开。此页不模拟 I2S、PSRAM 或真机音量，只验证浏览器端的根音映射、循环和松键语义。</p>
+  <section class="panel">
+    <div class="toolbar" id="instruments" aria-label="乐器"></div>
+    <div class="toolbar" id="octaves" aria-label="音区"></div>
+    <div class="keys" id="keys" aria-label="七个唱名按键"></div>
+    <div class="meta"><div>当前乐器<strong id="instrument-name">—</strong></div><div>当前音区<strong id="octave-name">—</strong></div><div>松键淡出<strong id="release-name">—</strong></div></div>
+    <p id="status" role="status">正在读取 23 枚资产清单…</p>
+  </section>
+
+  <script id="abo-p1-voice-core">
+  (() => {
+    const INSTRUMENTS = {
+      piano: [{root:'B2',id:'piano_b2'},{root:'F#3',id:'piano_fis3'},{root:'C4',id:'piano_c4'},{root:'F#4',id:'piano_fis4'},{root:'C5',id:'piano_c5'},{root:'F#5',id:'piano_fis5'},{root:'C6',id:'piano_c6'}],
+      violin: [{root:'G3',id:'violin_g3'},{root:'C4',id:'violin_c4'},{root:'E4',id:'violin_e4'},{root:'G4',id:'violin_g4'},{root:'C5',id:'violin_c5'},{root:'E5',id:'violin_e5'},{root:'A5',id:'violin_a5'}],
+      clarinet: [{root:'D3',id:'clarinet_d3'},{root:'F3',id:'clarinet_f3'},{root:'A#3',id:'clarinet_as3'},{root:'D4',id:'clarinet_d4'},{root:'F4',id:'clarinet_f4'},{root:'A#4',id:'clarinet_as4'},{root:'D5',id:'clarinet_d5'},{root:'F5',id:'clarinet_f5'},{root:'A#5',id:'clarinet_as5'}],
+    };
+    const LABELS = {piano:'钢琴',violin:'小提琴',clarinet:'单簧管'};
+    const SOLFEGE = ['do','re','mi','fa','sol','la','xi'];
+    function midi(note) { const matched = /^([A-G])(#?)(\d)$/.exec(note); const index = {C:0,D:2,E:4,F:5,G:7,A:9,B:11}[matched[1]] + (matched[2] ? 1 : 0); return (Number(matched[3]) + 1) * 12 + index; }
+    function targetNotes(octave) { return ['C','D','E','F','G','A','B'].map((name) => name + octave); }
+    function mapTarget(instrument, target) { const targetMidi = midi(target); return INSTRUMENTS[instrument].map((candidate) => ({...candidate, semitones:targetMidi - midi(candidate.root)})).sort((left,right) => Math.abs(left.semitones) - Math.abs(right.semitones))[0]; }
+    function releaseMillis(instrument) { return instrument === 'piano' ? 120 : 40; }
+    window.AboP1VoiceDemoCore = { INSTRUMENTS, LABELS, SOLFEGE, targetNotes, mapTarget, releaseMillis };
+  })();
+  </script>
+  <script>
+  (() => {
+    const BUNDLE = '../firmware/course-motherboard/abo_assets/delivery/';
+    const { INSTRUMENTS, LABELS, SOLFEGE, targetNotes, mapTarget, releaseMillis } = window.AboP1VoiceDemoCore;
+    const instruments = document.querySelector('#instruments'), octaves = document.querySelector('#octaves'), keys = document.querySelector('#keys'), status = document.querySelector('#status');
+    const instrumentName = document.querySelector('#instrument-name'), octaveName = document.querySelector('#octave-name'), releaseName = document.querySelector('#release-name');
+    let manifest = new Map(), context, instrument = 'piano', octave = 4, active, cache = new Map();
+    const held = new Map();
+    const steps=[7,8,9,10,11,12,13,14,16,17,19,21,23,25,28,31,34,37,41,45,50,55,60,66,73,80,88,97,107,118,130,143,157,173,190,209,230,253,279,307,337,371,408,449,494,544,598,658,724,796,876,963,1060,1166,1282,1411,1552,1707,1878,2066,2272,2499,2749,3024,3327,3660,4026,4428,4871,5358,5894,6484,7132,7845,8630,9493,10442,11487,12635,13899,15289,16818,18500,20350,22385,24623,27086,29794,32767],indexChange=[-1,-1,-1,-1,2,4,6,8,-1,-1,-1,-1,2,4,6,8];
+    function decode(buffer){const view=new DataView(buffer),rate=view.getUint32(6,true),frames=view.getUint16(12,true),total=view.getUint32(14,true),out=new Int16Array(total);if(String.fromCharCode(...new Uint8Array(buffer,0,4))!=='EIAD')throw Error('不是 EIAD');let cursor=20,written=0;for(let frame=0;frame<frames;frame+=1){const count=view.getUint16(cursor,true),predictor=view.getInt16(cursor+2,true);cursor+=6;out[written++]=predictor;let state={predictor,index:0};for(let pos=1;pos<count;pos+=2){const packed=view.getUint8(cursor++);for(const code of [packed&15,packed>>4]){if(written>=total)break;const step=steps[state.index];let delta=step>>3;if(code&4)delta+=step;if(code&2)delta+=step>>1;if(code&1)delta+=step>>2;state.predictor=Math.max(-32768,Math.min(32767,state.predictor+(code&8?-delta:delta)));state.index=Math.max(0,Math.min(88,state.index+indexChange[code]));out[written++]=state.predictor;}}}return{rate,out};}
+    async function bufferFor(asset){if(cache.has(asset.id))return cache.get(asset.id);const response=await fetch(BUNDLE+asset.file);if(!response.ok)throw Error(`${asset.file} HTTP ${response.status}`);context??=new AudioContext();await context.resume();const decoded=decode(await response.arrayBuffer()),buffer=context.createBuffer(1,decoded.out.length,decoded.rate),channel=buffer.getChannelData(0);for(let i=0;i<channel.length;i+=1)channel[i]=decoded.out[i]/32768;cache.set(asset.id,buffer);return buffer;}
+    function release(){if(!active)return;const now=context.currentTime,fade=releaseMillis(active.instrument)/1000;active.gain.gain.cancelScheduledValues(now);active.gain.gain.setValueAtTime(Math.max(0.0001,active.gain.gain.value),now);active.gain.gain.exponentialRampToValueAtTime(0.0001,now+fade);active.source.stop(now+fade+0.015);active=null;status.textContent=`松键：${fade*1000}ms 淡出。`;}
+    async function start(target,button){release();const mapped=mapTarget(instrument,target),asset=manifest.get(mapped.id);if(!asset)throw Error(`清单缺少 ${mapped.id}`);status.textContent=`正在解码 ${mapped.root}…`;const buffer=await bufferFor(asset),source=context.createBufferSource(),gain=context.createGain();source.buffer=buffer;source.loop=true;source.loopStart=asset.loop_start_sample/buffer.sampleRate;source.loopEnd=asset.loop_end_sample/buffer.sampleRate;source.playbackRate.value=2**(mapped.semitones/12);gain.gain.value=1;source.connect(gain).connect(context.destination);source.start();active={source,gain,instrument};button.classList.add('active');source.addEventListener('ended',()=>button.classList.remove('active'));status.textContent=`${target} ← ${mapped.root}（${mapped.semitones>=0?'+':''}${mapped.semitones} 半音）；按住持续，松键淡出。`;}
+    function render(){instruments.innerHTML='';Object.keys(INSTRUMENTS).forEach((name)=>{const button=document.createElement('button');button.textContent=LABELS[name];button.className=name===instrument?'active':'';button.onclick=()=>{release();instrument=name;render();};instruments.append(button);});octaves.innerHTML='';[3,4,5].forEach((value)=>{const button=document.createElement('button');button.textContent=`${value} 音区（${value===3?'Q':value===4?'W':'E'}）`;button.className=value===octave?'active':'';button.onclick=()=>{release();octave=value;render();};octaves.append(button);});keys.innerHTML='';targetNotes(octave).forEach((target,index)=>{const button=document.createElement('button');button.className='key';button.innerHTML=`${SOLFEGE[index]}<small>${target}</small><kbd>${index+1}</kbd>`;button.onpointerdown=(event)=>{event.preventDefault();start(target,button).catch(error=>status.textContent=`失败：${error.message}`);};button.onpointerup=button.onpointercancel=button.onpointerleave=()=>release();keys.append(button);});instrumentName.textContent=LABELS[instrument];octaveName.textContent=`C${octave}–B${octave}`;releaseName.textContent=`${releaseMillis(instrument)}ms`;}
+    document.addEventListener('keydown',(event)=>{if(event.repeat)return;const key=event.key.toLowerCase();if({q:3,w:4,e:5}[key]){octave={q:3,w:4,e:5}[key];render();return;}const index=Number(key)-1;if(index>=0&&index<7){const target=targetNotes(octave)[index],button=keys.children[index];held.set(key,{target,button});start(target,button).catch(error=>status.textContent=`失败：${error.message}`);}});
+    document.addEventListener('keyup',(event)=>{const key=event.key.toLowerCase();if(held.has(key)){held.delete(key);release();}});
+    fetch(BUNDLE+'manifest.json').then((response)=>{if(!response.ok)throw Error(`manifest.json HTTP ${response.status}`);return response.json();}).then((data)=>{manifest=new Map(data.assets.map((asset)=>[asset.id,asset]));render();status.textContent=`已载入 ${manifest.size} 枚 EIAD；可开始试听。`;}).catch((error)=>status.textContent=`初始化失败：${error.message}`);
+  })();
+  </script>
+</body>
+</html>

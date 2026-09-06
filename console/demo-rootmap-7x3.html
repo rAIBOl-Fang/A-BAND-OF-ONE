@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>A Band of One · 7 根音映射验证</title>
+  <style>
+    :root { color-scheme: dark; --bg:#14110d; --panel:#211b14; --line:#4a3a28; --gold:#d9a441; --ink:#f7eee0; --muted:#a99b89; --blue:#52a9db; --bad:#cf705d; --good:#77be8b; }
+    * { box-sizing:border-box; } body { margin:0; min-height:100vh; background:radial-gradient(circle at top,#302313,#14110d 55%); color:var(--ink); font:16px/1.5 system-ui,"Microsoft YaHei",sans-serif; }
+    main { width:min(1040px,calc(100% - 32px)); margin:0 auto; padding:42px 0 56px; } h1,h2,p { margin-top:0; } h1 { font-size:clamp(26px,5vw,42px); letter-spacing:.03em; } h2 { font-size:18px; margin-bottom:8px; }
+    .lead,.hint,footer { color:var(--muted); } .panel { border:1px solid var(--line); background:color-mix(in srgb,var(--panel) 92%,black); border-radius:16px; padding:20px; margin-top:16px; }
+    button { font:inherit; cursor:pointer; color:inherit; } .choice,.octaves,.keys,.quick { display:grid; gap:10px; } .choice { grid-template-columns:repeat(2,1fr); } .octaves { grid-template-columns:repeat(3,1fr); margin-top:12px; } .keys { grid-template-columns:repeat(7,1fr); margin-top:16px; } .quick { grid-template-columns:repeat(4,1fr); }
+    .mode,.octave,.quick button { border:1px solid var(--line); border-radius:10px; background:#18130e; padding:12px; text-align:left; } .mode strong,.octave strong { display:block; } .mode.selected,.octave.selected { border-color:var(--gold); background:#3d2c14; color:#ffe7af; box-shadow:inset 0 0 0 1px #6d4d1d; }
+    .key { min-height:120px; border-radius:9px; border:1px solid #82725f; background:linear-gradient(#fffaf0,#d9cdbb); color:#241b12; box-shadow:0 4px 0 #796852; display:flex; flex-direction:column; align-items:center; justify-content:space-between; padding:13px 5px; user-select:none; } .key.active,.key:hover { background:linear-gradient(#c5f1ff,#70bde2); transform:translateY(2px); box-shadow:0 2px 0 #3d728d; }
+    .solfege { font-size:25px; font-weight:750; } .pitch { color:#6e5b44; font-size:13px; } kbd { border:1px solid #7d6d59; border-radius:4px; padding:1px 5px; font-size:12px; background:#f4e8d5; }
+    .readout { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; } .readout div { border-left:3px solid var(--gold); padding:4px 0 4px 10px; min-width:0; } .readout span { display:block; color:var(--muted); font-size:12px; } .readout b { overflow-wrap:anywhere; }
+    .map { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; } .map-group { border:1px solid var(--line); border-radius:10px; padding:10px; } .map-group h3 { font-size:14px; margin:0 0 7px; color:#dfc38a; } .row { display:flex; justify-content:space-between; gap:8px; padding:2px 0; color:var(--muted); font-size:12px; } .row.warn { color:#e3b09c; } .row.current { color:#92d8f5; font-weight:700; }
+    .meter { display:flex; gap:16px; flex-wrap:wrap; font-size:14px; } .good { color:var(--good); } .bad { color:var(--bad); }
+    @media (max-width:700px) { main { width:min(100% - 20px,1040px); padding-top:24px; } .panel { padding:14px; } .keys { gap:4px; } .key { min-height:100px; padding:8px 2px; } .readout,.map,.quick { grid-template-columns:1fr; } }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>钢琴根音映射验证</h1>
+    <p class="lead">同一组 21 个目标音，比较旧的 <b>3 根音</b> 与候选 <b>7 根音</b>。本页只使用项目内未编辑的钢琴 WAV；不连接键盘、不写入固件。</p>
+
+    <section class="panel">
+      <h2>选择映射方案</h2>
+      <div class="choice" id="modes">
+        <button class="mode" data-mode="three"><strong>旧基线：3 根音</strong><span>B2 / C4 / C5</span></button>
+        <button class="mode selected" data-mode="seven"><strong>候选：7 根音</strong><span>B2 / F#3 / C4 / F#4 / C5 / F#5 / C6</span></button>
+      </div>
+      <div class="meter" aria-live="polite"><span>根音数：<b id="rootCount">7</b></span><span>最大变调：<b id="maxShift" class="good">±3 半音</b></span><span id="verdict" class="good">候选方案满足「单音最多 ±3 半音」验证门槛。</span></div>
+      <div class="octaves" id="octaves">
+        <button class="octave" data-octave="3"><strong>低音区</strong>C3–B3 · <kbd>Q</kbd></button>
+        <button class="octave selected" data-octave="4"><strong>中音区</strong>C4–B4 · <kbd>W</kbd></button>
+        <button class="octave" data-octave="5"><strong>高音区</strong>C5–B5 · <kbd>E</kbd></button>
+      </div>
+      <p class="hint">按 <kbd>1</kbd>–<kbd>7</kbd> 或点击琴键发声；切换方案后，请反复试听 C3、A3、G4、B5 这四个最有辨识度的对比点。</p>
+      <div class="keys" id="keys" aria-label="七个唱名按键"></div>
+    </section>
+
+    <section class="panel" aria-live="polite">
+      <div class="readout">
+        <div><span>当前目标音</span><b id="target">C4 · do</b></div>
+        <div><span>原始根音</span><b id="source">C4</b></div>
+        <div><span>变调</span><b id="shift">+0 半音 · ×1.0000</b></div>
+        <div><span>判断</span><b id="status" class="good">候选范围内</b></div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>四点快速试听</h2>
+      <p class="hint">点击后会切到相应音区并发声。每次先听 3 根音，再切到 7 根音听同一音。</p>
+      <div class="quick" id="quick"></div>
+    </section>
+
+    <section class="panel">
+      <h2>21 音映射总览</h2>
+      <div class="map" id="map"></div>
+    </section>
+    <footer>音源：FreePats Upright Piano KW（CC0 1.0）。此页面是“7×3 根音方案”的钢琴先导验证；弦乐与长笛需补齐同奏法根音后接入相同映射结构。</footer>
+  </main>
+
+  <script id="abo-rootmap-core">
+    (function () {
+      var SCALE = [
+        { solfege:'do', name:'C', semitone:0 }, { solfege:'re', name:'D', semitone:2 }, { solfege:'mi', name:'E', semitone:4 },
+        { solfege:'fa', name:'F', semitone:5 }, { solfege:'sol', name:'G', semitone:7 }, { solfege:'la', name:'A', semitone:9 }, { solfege:'xi', name:'B', semitone:11 }
+      ];
+      function root(label, midi, file) { return { label:label, midi:midi, url:'../firmware/course-motherboard/abo_assets/raw/piano-upright-kw/samples/' + encodeURIComponent(file) }; }
+      var ROOT_SETS = {
+        three: [root('B2',47,'B2vH.wav'), root('C4',60,'C4vH.wav'), root('C5',72,'C5vH.wav')],
+        seven: [root('B2',47,'B2vH.wav'), root('F#3',54,'F#3vH.wav'), root('C4',60,'C4vH.wav'), root('F#4',66,'F#4vH.wav'), root('C5',72,'C5vH.wav'), root('F#5',78,'F#5vH.wav'), root('C6',84,'C6vH.wav')]
+      };
+      function notesForOctave(octave) { return SCALE.map(function (note, index) { return { index:index, solfege:note.solfege, label:note.name + octave, midi:12 * (octave + 1) + note.semitone }; }); }
+      function targets() { return [3,4,5].flatMap(notesForOctave); }
+      function mapTarget(mode, midi) {
+        var roots = ROOT_SETS[mode]; var selected = roots[0];
+        roots.forEach(function (candidate) { if (Math.abs(candidate.midi - midi) < Math.abs(selected.midi - midi)) selected = candidate; });
+        var semitones = midi - selected.midi;
+        return { source:selected, semitones:semitones, rate:Math.pow(2, semitones / 12) };
+      }
+      function maxAbsShift(mode) { return Math.max.apply(null, targets().map(function (note) { return Math.abs(mapTarget(mode, note.midi).semitones); })); }
+      window.AboRootMapCore = { ROOT_SETS:ROOT_SETS, notesForOctave:notesForOctave, targets:targets, mapTarget:mapTarget, maxAbsShift:maxAbsShift };
+    })();
+  </script>
+  <script>
+    (function () {
+      var core = window.AboRootMapCore;
+      var state = { mode:'seven', octave:4, active:{}, lastLabel:'C4' };
+      var keys = document.getElementById('keys'); var map = document.getElementById('map'); var quick = document.getElementById('quick');
+      var target = document.getElementById('target'); var source = document.getElementById('source'); var shift = document.getElementById('shift'); var status = document.getElementById('status');
+      function notes() { return core.notesForOctave(state.octave); }
+      function mapped(note) { return core.mapTarget(state.mode, note.midi); }
+      function stop(label, button) { var audio = state.active[label]; if (audio) { audio.pause(); audio.currentTime = 0; delete state.active[label]; } if (button) button.classList.remove('active'); }
+      function update(note) {
+        var result = mapped(note); var safe = Math.abs(result.semitones) <= 3;
+        target.textContent = note.label + ' · ' + note.solfege; source.textContent = result.source.label;
+        shift.textContent = (result.semitones >= 0 ? '+' : '') + result.semitones + ' 半音 · ×' + result.rate.toFixed(4);
+        status.textContent = safe ? '候选范围内' : '跨度过大，听感风险高'; status.className = safe ? 'good' : 'bad'; state.lastLabel = note.label; renderMap();
+      }
+      function play(note, button) {
+        if (state.active[note.label]) return; var result = mapped(note); var audio = new Audio(result.source.url);
+        audio.preload = 'auto'; audio.playbackRate = result.rate; audio.preservesPitch = false; audio.volume = 1; state.active[note.label] = audio;
+        audio.addEventListener('error', function () { status.textContent = '音频加载失败（媒体错误码 ' + (audio.error ? audio.error.code : '未知') + '）'; status.className = 'bad'; });
+        audio.play().catch(function (error) { status.textContent = '音频播放被拒绝：' + (error && error.name ? error.name : '未知原因'); status.className = 'bad'; });
+        if (button) button.classList.add('active'); update(note);
+      }
+      function renderKeys() { keys.innerHTML = ''; notes().forEach(function (note) { var button = document.createElement('button'); button.className = 'key'; button.innerHTML = '<span class="solfege">' + note.solfege + '</span><span class="pitch">' + note.label + '</span><kbd>' + (note.index + 1) + '</kbd>'; button.addEventListener('pointerdown', function (event) { event.preventDefault(); play(note, button); }); button.addEventListener('pointerup', function () { stop(note.label, button); }); button.addEventListener('pointerleave', function () { stop(note.label, button); }); keys.appendChild(button); }); }
+      function renderMap() { map.innerHTML = ''; [3,4,5].forEach(function (octave) { var group = document.createElement('div'); group.className = 'map-group'; group.innerHTML = '<h3>' + ['低','中','高'][octave - 3] + '音区 · C' + octave + '–B' + octave + '</h3>'; core.notesForOctave(octave).forEach(function (note) { var result = mapped(note); var row = document.createElement('div'); row.className = 'row' + (Math.abs(result.semitones) > 3 ? ' warn' : '') + (state.lastLabel === note.label ? ' current' : ''); row.innerHTML = '<span>' + note.solfege + ' · ' + note.label + '</span><span>' + result.source.label + ' ' + (result.semitones >= 0 ? '+' : '') + result.semitones + ' st</span>'; group.appendChild(row); }); map.appendChild(group); }); }
+      function renderQuick() { quick.innerHTML = ''; ['C3','A3','G4','B5'].forEach(function (label) { var note = core.targets().filter(function (item) { return item.label === label; })[0]; var button = document.createElement('button'); button.textContent = label + ' · 点击试听'; button.addEventListener('click', function () { setOctave(Number(label.slice(-1))); play(note); }); quick.appendChild(button); }); }
+      function setMode(mode) { Object.keys(state.active).forEach(function (label) { stop(label); }); state.mode = mode; document.querySelectorAll('.mode').forEach(function (button) { button.classList.toggle('selected', button.dataset.mode === mode); }); var maximum = core.maxAbsShift(mode); document.getElementById('rootCount').textContent = core.ROOT_SETS[mode].length; var max = document.getElementById('maxShift'); max.textContent = '±' + maximum + ' 半音'; max.className = maximum <= 3 ? 'good' : 'bad'; var verdict = document.getElementById('verdict'); verdict.textContent = maximum <= 3 ? '候选方案满足「单音最多 ±3 半音」验证门槛。' : '旧基线存在超过 ±3 半音的高风险音。'; verdict.className = maximum <= 3 ? 'good' : 'bad'; renderMap(); }
+      function setOctave(octave) { Object.keys(state.active).forEach(function (label) { stop(label); }); state.octave = octave; document.querySelectorAll('.octave').forEach(function (button) { button.classList.toggle('selected', Number(button.dataset.octave) === octave); }); renderKeys(); }
+      document.getElementById('modes').addEventListener('click', function (event) { var button = event.target.closest('[data-mode]'); if (button) setMode(button.dataset.mode); });
+      document.getElementById('octaves').addEventListener('click', function (event) { var button = event.target.closest('[data-octave]'); if (button) setOctave(Number(button.dataset.octave)); });
+      document.addEventListener('keydown', function (event) { if (event.repeat) return; var octaves = { q:3, w:4, e:5 }; if (octaves[event.key.toLowerCase()]) { setOctave(octaves[event.key.toLowerCase()]); return; } var index = Number(event.key) - 1; if (index >= 0 && index < 7) play(notes()[index], keys.children[index]); });
+      document.addEventListener('keyup', function (event) { var index = Number(event.key) - 1; if (index >= 0 && index < 7) stop(notes()[index].label, keys.children[index]); });
+      renderKeys(); renderQuick(); setMode('seven'); renderMap();
+    })();
+  </script>
+</body>
+</html>

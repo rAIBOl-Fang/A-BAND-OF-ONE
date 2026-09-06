@@ -1,0 +1,41 @@
+# ESP-IDF / CMake build output
+build/
+**/build/
+**/managed_components/
+sdkconfig
+sdkconfig.old
+.idf.py/
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+compile_commands.json
+
+# Python / test caches
+__pycache__/
+**/__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# JavaScript / editor output
+node_modules/
+coverage/
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Local logs and temporary files
+*.log
+*.tmp
+*.temp
+*.bak
+
+# Generated firmware artifacts; source assets and documented media remain tracked
+*.elf
+*.bin
+*.map
+*.hex
+dist/
+out/

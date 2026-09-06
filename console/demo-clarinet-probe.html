@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>A Band of One · 单簧管试听探针</title>
+  <style>
+    :root { color-scheme:dark; --bg:#11131a; --panel:#1b202c; --line:#3b4961; --accent:#78c3d7; --ink:#edf5f8; --muted:#aab7c5; --good:#78c98d; --bad:#e3776c; }
+    * { box-sizing:border-box; } body { margin:0; min-height:100vh; background:radial-gradient(circle at top,#223448,#11131a 62%); color:var(--ink); font:16px/1.55 system-ui,"Microsoft YaHei",sans-serif; }
+    main { width:min(980px,calc(100% - 32px)); margin:auto; padding:48px 0; } h1 { margin:0 0 8px; font-size:clamp(27px,5vw,42px); } h2 { margin:0 0 8px; font-size:20px; } p { margin:8px 0; } .lead,.muted,.meta { color:var(--muted); } .panel { margin-top:18px; padding:20px; border:1px solid var(--line); border-radius:16px; background:color-mix(in srgb,var(--panel) 92%,black); } .notice { border-color:#4c7b85; background:#13252b; } .notice b { color:#a9e2ed; }
+    .ranges { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; } .range { border:1px solid var(--line); border-radius:12px; padding:14px; background:#141925; } .keys { display:grid; grid-template-columns:repeat(7,1fr); gap:8px; margin-top:14px; } button { min-height:66px; border:1px solid #536d86; border-radius:10px; background:#e9ece7; color:#17212c; cursor:pointer; font:700 20px/1 system-ui,"Microsoft YaHei",sans-serif; } button small { display:block; margin-top:7px; font:400 13px/1 system-ui; color:#4d5c68; } button:hover,button.playing { background:#9bd9e7; } #status { min-height:1.5em; } .good { color:var(--good); } .bad { color:var(--bad); } code { color:#a9e2ed; } footer { color:var(--muted); font-size:13px; margin:18px 0; } @media(max-width:650px) { main { width:min(100% - 20px,980px); padding:24px 0; } .panel{padding:15px}.ranges{grid-template-columns:1fr}.keys{gap:5px}button{min-height:60px;font-size:18px} }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>单簧管 · 现成单音样本试听</h1>
+    <p class="lead">第三乐器候选。每个按钮播放本地保存的 GitHub 公开 MP3，并按最近真实根音做浏览器变调；不连接键盘、不写入固件。</p>
+    <section class="panel notice"><b>本轮结论：</b>单簧管的现有单音源可覆盖 C3–B5，映射最大仅 −2 至 +3 半音。为保持这一门槛，采用 9 枚根音，不强行压成 7 枚。</section>
+    <section class="panel"><div class="ranges" id="ranges"></div><div class="keys" id="keys"></div></section>
+    <section class="panel"><b>播放状态：</b><span id="status" class="muted">等待试听。可按任意琴键试听完整 21 音。</span><p class="meta">九枚根音均已在本地：D3 / F3 / A#3 / D4 / F4 / A#4 / D5 / F5 / A#5。每个按钮显示实际根音和变调幅度。</p></section>
+    <footer>来源：<a href="https://github.com/nbrosowsky/tonejs-instruments" target="_blank" rel="noopener">nbrosowsky/tonejs-instruments</a>，样本 CC BY 3.0；归属记录见 <code>abo_assets/incoming/tonejs-clarinet-probe/SOURCE.md</code>。这是资产准入前的网页探针，不等于已进入 factory 分区。</footer>
+  </main>
+  <script id="abo-clarinet-probe-core">
+    (function () {
+      var ROOTS = [
+        ['D3', 50], ['F3', 53], ['A#3', 58], ['D4', 62], ['F4', 65], ['A#4', 70], ['D5', 74], ['F5', 77], ['A#5', 82]
+      ].map(function (entry) { return { note:entry[0], midi:entry[1], file:entry[0].replace('#', 's') + '.mp3' }; });
+      var TARGETS = [
+        ['do','C3',48], ['re','D3',50], ['mi','E3',52], ['fa','F3',53], ['sol','G3',55], ['la','A3',57], ['xi','B3',59],
+        ['do','C4',60], ['re','D4',62], ['mi','E4',64], ['fa','F4',65], ['sol','G4',67], ['la','A4',69], ['xi','B4',71],
+        ['do','C5',72], ['re','D5',74], ['mi','E5',76], ['fa','F5',77], ['sol','G5',79], ['la','A5',81], ['xi','B5',83]
+      ].map(function (entry) { return { solfege:entry[0], note:entry[1], midi:entry[2] }; });
+      function noteToMidi(note) {
+        var match = /^([A-G])(#?)([0-8])$/.exec(note);
+        var base = { C:0, D:2, E:4, F:5, G:7, A:9, B:11 };
+        if (!match) throw new Error('unsupported note: ' + note);
+        return (Number(match[3]) + 1) * 12 + base[match[1]] + (match[2] ? 1 : 0);
+      }
+      function mapTarget(note) {
+        var target = TARGETS.find(function (item) { return item.note === note; }) || { note:note, midi:noteToMidi(note) };
+        var root = ROOTS.reduce(function (best, candidate) {
+          return Math.abs(candidate.midi - target.midi) < Math.abs(best.midi - target.midi) ? candidate : best;
+        });
+        return { target:target, root:root, semitones:target.midi - root.midi, rate:Math.pow(2, (target.midi - root.midi) / 12) };
+      }
+      window.AboClarinetProbeCore = { ROOTS:ROOTS, PLAYABLE_ROOTS:ROOTS.map(function (root) { return root.note; }), TARGETS:TARGETS, mapTarget:mapTarget };
+    })();
+  </script>
+  <script>
+    (function () {
+      var core = window.AboClarinetProbeCore, keys = document.getElementById('keys'), ranges = document.getElementById('ranges'), status = document.getElementById('status'), active = null;
+      var downloaded = new Set(core.PLAYABLE_ROOTS);
+      [['低音区','C3–B3'], ['中音区','C4–B4'], ['高音区','C5–B5']].forEach(function (range) { var item=document.createElement('article'); item.className='range'; item.innerHTML='<h2>'+range[0]+'</h2><p class="muted">'+range[1]+'</p>'; ranges.appendChild(item); });
+      function stop() { if (active) { active.pause(); active.currentTime = 0; active = null; } document.querySelectorAll('.playing').forEach(function (button) { button.classList.remove('playing'); }); }
+      core.TARGETS.forEach(function (target) {
+        var mapped = core.mapTarget(target.note), button = document.createElement('button');
+        button.type='button'; button.innerHTML=target.solfege+'<small>'+target.note+' · '+mapped.root.note+' '+(mapped.semitones > 0 ? '+' : '')+mapped.semitones+' 半音</small>';
+        button.addEventListener('click', function () {
+          stop();
+          if (!downloaded.has(mapped.root.note)) { status.className='bad'; status.textContent=target.note+' 需要 '+mapped.root.note+' 原件；本地文件缺失，请停止试听并核对资产清单。'; return; }
+          var audio = new Audio('../firmware/course-motherboard/abo_assets/incoming/tonejs-clarinet-probe/'+mapped.root.file); active=audio; audio.playbackRate=mapped.rate; button.classList.add('playing'); status.className='muted'; status.textContent='播放 '+target.note+'（根音 '+mapped.root.note+'，'+(mapped.semitones>0?'+':'')+mapped.semitones+' 半音）…';
+          audio.addEventListener('ended', function () { button.classList.remove('playing'); status.className='good'; status.textContent=target.note+' 播放完成。'; active=null; });
+          audio.addEventListener('error', function () { button.classList.remove('playing'); status.className='bad'; status.textContent='加载失败。请通过 http://127.0.0.1:8800 打开页面。'; active=null; });
+          audio.play().catch(function (error) { button.classList.remove('playing'); status.className='bad'; status.textContent='播放被浏览器拒绝：'+(error && error.name ? error.name : '未知原因'); active=null; });
+        }); keys.appendChild(button);
+      });
+    })();
+  </script>
+</body>
+</html>

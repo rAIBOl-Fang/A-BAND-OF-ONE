@@ -1,0 +1,291 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>A Band of One · 21 音钢琴 Demo</title>
+  <style>
+    :root { color-scheme: dark; --bg:#14110d; --panel:#211b14; --line:#4a3a28; --gold:#d9a441; --ink:#f7eee0; --muted:#a99b89; --blue:#52a9db; }
+    * { box-sizing:border-box; }
+    body { margin:0; min-height:100vh; background:radial-gradient(circle at top,#302313,#14110d 55%); color:var(--ink); font:16px/1.5 system-ui,"Microsoft YaHei",sans-serif; }
+    main { width:min(920px,calc(100% - 32px)); margin:0 auto; padding:44px 0 56px; }
+    h1 { margin:0; font-size:clamp(26px,5vw,42px); letter-spacing:.03em; }
+    .lead { max-width:720px; color:var(--muted); margin:8px 0 26px; }
+    .panel { border:1px solid var(--line); background:color-mix(in srgb,var(--panel) 92%,black); border-radius:16px; padding:20px; margin-top:16px; }
+    .octaves { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
+    .instrument-cycle { width:100%; border:1px solid var(--gold); border-radius:10px; padding:12px; background:#3d2c14; color:#ffe7af; font-weight:700; }
+    button { font:inherit; color:inherit; cursor:pointer; }
+    .octave { border:1px solid var(--line); border-radius:10px; padding:12px 10px; background:#18130e; color:var(--muted); }
+    .octave.selected { background:#3d2c14; border-color:var(--gold); color:#ffe7af; box-shadow:inset 0 0 0 1px #6d4d1d; }
+    .hint { color:var(--muted); font-size:14px; }
+    .keys { display:grid; grid-template-columns:repeat(7,1fr); gap:8px; margin-top:18px; }
+    .key { min-height:130px; display:flex; flex-direction:column; justify-content:space-between; align-items:center; padding:14px 6px; border-radius:8px; border:1px solid #82725f; background:linear-gradient(#fffaf0,#d9cdbb); color:#241b12; box-shadow:0 4px 0 #796852; user-select:none; }
+    .key:hover,.key.active { background:linear-gradient(#c5f1ff,#70bde2); transform:translateY(2px); box-shadow:0 2px 0 #3d728d; }
+    .solfege { font-size:clamp(18px,3vw,27px); font-weight:750; }
+    .pitch { color:#6e5b44; font-size:13px; }
+    kbd { border:1px solid #7d6d59; border-radius:4px; padding:1px 5px; font-size:12px; background:#f4e8d5; }
+    .readout { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; }
+    .readout div { border-left:3px solid var(--gold); padding:4px 0 4px 10px; min-width:0; }
+    .readout span { display:block; color:var(--muted); font-size:12px; }
+    .readout b { overflow-wrap:anywhere; }
+    .calibration { display:grid; grid-template-columns:1.2fr 1fr 1fr auto; gap:12px; align-items:end; }
+    .calibration label { display:grid; gap:5px; color:var(--muted); font-size:13px; }
+    .calibration select,.calibration input,.calibration button { min-height:38px; border:1px solid var(--line); border-radius:8px; background:#18130e; color:var(--ink); padding:6px 9px; }
+    .calibration button { background:#3d2c14; border-color:var(--gold); color:#ffe7af; }
+    .map { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-top:12px; }
+    .map-group { border:1px solid var(--line); border-radius:10px; padding:10px; }
+    .map-group h2 { font-size:14px; margin:0 0 6px; color:#dfc38a; }
+    .map-row { display:flex; justify-content:space-between; gap:8px; color:var(--muted); font-size:12px; padding:2px 0; }
+    .map-row.current { color:#92d8f5; font-weight:700; }
+    footer { color:var(--muted); font-size:13px; margin-top:18px; }
+    @media (max-width:640px) { main { width:min(100% - 20px,920px); padding-top:24px; } .panel { padding:14px; } .keys { gap:4px; } .key { min-height:104px; padding:9px 2px; } .readout,.calibration { grid-template-columns:1fr; } .map { grid-template-columns:1fr; } }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>21 音钢琴 Demo</h1>
+    <p class="lead">只用原始 <b>B2 / C4 / C5</b> 三枚钢琴采样，通过播放倍率覆盖三组 do–xi。此页不连接键盘、不写入固件。</p>
+
+    <section class="panel" aria-label="音区选择">
+      <button class="instrument-cycle" id="instCycle">S8 · 当前乐器：钢琴 · 点击切换（<kbd>8</kbd>）</button>
+      <div class="octaves" id="octaves">
+        <button class="octave" data-octave="3">低音区<br><small>C3–B3 · <kbd>Q</kbd></small></button>
+        <button class="octave selected" data-octave="4">中音区<br><small>C4–B4 · <kbd>W</kbd></small></button>
+        <button class="octave" data-octave="5">高音区<br><small>C5–B5 · <kbd>E</kbd></small></button>
+      </div>
+      <p class="hint">点击音区后，按 <kbd>1</kbd>–<kbd>7</kbd> 或点击下方键帽演奏。S8 / <kbd>8</kbd> 循环切乐器。浏览器首次发声必须来自一次点击或按键。</p>
+      <div class="keys" id="keys" aria-label="七个唱名按键"></div>
+    </section>
+
+    <section class="panel" aria-live="polite">
+      <div class="readout">
+        <div><span>当前目标音</span><b id="target">C4 · do</b></div>
+        <div><span>使用原始采样</span><b id="source">C4</b></div>
+        <div><span>变调</span><b id="shift">0 半音 · ×1.0000</b></div>
+      </div>
+    </section>
+
+    <section class="panel" aria-label="钢琴逐音校准">
+      <div class="hint">钢琴逐音校准：先用钢琴弹一个音，再调此音的试听层数和每层音量；只影响之后的网页试听，不会修改 WAV 或固件。</div>
+      <div class="calibration">
+        <div><span class="hint">当前校准音</span><br><b id="calTarget">C4 · do</b></div>
+        <label>试听层数
+          <select id="calLayers"><option value="1">1 层</option><option value="2">2 层</option><option value="3">3 层</option></select>
+        </label>
+        <label>每层音量 <span id="calVolumeValue">1.00</span>
+          <input id="calVolume" type="range" min="0.10" max="1.00" step="0.05" value="1.00">
+        </label>
+        <button id="calReset" type="button">恢复此音默认</button>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="hint">21 音映射总览（高亮为上一次发声的音）</div>
+      <div class="map" id="map"></div>
+    </section>
+    <footer>音源：FreePats Upright Piano KW（CC0 1.0）。本页直接使用项目内未编辑 WAV。</footer>
+  </main>
+
+  <script id="abo21-core">
+    (function () {
+      var SCALE = [
+        { solfege: 'do', name: 'C', semitone: 0 }, { solfege: 're', name: 'D', semitone: 2 },
+        { solfege: 'mi', name: 'E', semitone: 4 }, { solfege: 'fa', name: 'F', semitone: 5 },
+        { solfege: 'sol', name: 'G', semitone: 7 }, { solfege: 'la', name: 'A', semitone: 9 },
+        { solfege: 'xi', name: 'B', semitone: 11 }
+      ];
+      var INSTRUMENTS = [
+        { id: 'piano', name: '钢琴', roots: [
+          { label: 'B2', midi: 47, url: '../firmware/course-motherboard/abo_assets/raw/piano-upright-kw/samples/B2vH.wav' },
+          { label: 'C4', midi: 60, url: '../firmware/course-motherboard/abo_assets/raw/piano-upright-kw/samples/C4vH.wav' },
+          { label: 'C5', midi: 72, url: '../firmware/course-motherboard/abo_assets/raw/piano-upright-kw/samples/C5vH.wav' }
+        ] },
+        { id: 'violin', name: '独奏小提琴', roots: [
+          { label: 'G3', midi: 55, url: '../firmware/course-motherboard/abo_assets/raw/violin-vsco2/LLVln_ArcoVib_G3_f.wav' },
+          { label: 'C4', midi: 60, url: '../firmware/course-motherboard/abo_assets/raw/violin-vsco2/LLVln_ArcoVib_C4_f.wav' },
+          { label: 'C5', midi: 72, url: '../firmware/course-motherboard/abo_assets/raw/violin-vsco2/LLVln_ArcoVib_C5_f.wav' }
+        ] },
+        { id: 'flute', name: '长笛', roots: [
+          { label: 'C3', midi: 48, url: '../firmware/course-motherboard/abo_assets/raw/flute-vsco2/LDFlute_susNV_C3_v1_1.wav' },
+          { label: 'C4', midi: 60, url: '../firmware/course-motherboard/abo_assets/raw/flute-vsco2/LDFlute_susNV_C4_v1_1.wav' },
+          { label: 'C5', midi: 72, url: '../firmware/course-motherboard/abo_assets/raw/flute-vsco2/LDFlute_susNV_C5_v1_1.wav' }
+        ] }
+      ];
+      var INSTRUMENT_VOLUMES = { piano: 1, violin: 1, flute: 1 };
+      var INSTRUMENT_LAYERS = { piano: 1, violin: 1, flute: 3 };
+      var PIANO_CALIBRATION = {};
+      function notesForOctave(octave) {
+        return SCALE.map(function (note, index) {
+          return { index: index, solfege: note.solfege, label: note.name + octave, midi: 12 * (octave + 1) + note.semitone };
+        });
+      }
+      function listInstruments() { return INSTRUMENTS; }
+      function pianoCalibration(midi) { return PIANO_CALIBRATION[midi] || { layers: 1, volume: 1 }; }
+      function setPianoCalibration(midi, layers, volume) {
+        PIANO_CALIBRATION[midi] = {
+          layers: Math.max(1, Math.min(3, Math.round(Number(layers) || 1))),
+          volume: Math.max(0.1, Math.min(1, Number(volume) || 1))
+        };
+      }
+      function resetPianoCalibration(midi) { delete PIANO_CALIBRATION[midi]; }
+      function instrumentVolume(instrumentId, midi) {
+        return instrumentId === 'piano' ? pianoCalibration(midi).volume : (INSTRUMENT_VOLUMES[instrumentId] || 1);
+      }
+      function instrumentLayers(instrumentId, midi) {
+        return instrumentId === 'piano' ? pianoCalibration(midi).layers : (INSTRUMENT_LAYERS[instrumentId] || 1);
+      }
+      function mapTarget(instrumentId, midi) {
+        if (typeof instrumentId === 'number') { midi = instrumentId; instrumentId = 'piano'; }
+        var instrument = INSTRUMENTS.filter(function (candidate) { return candidate.id === instrumentId; })[0] || INSTRUMENTS[0];
+        var roots = instrument.roots;
+        if (instrument.id === 'flute' && midi < 60) roots = instrument.roots.filter(function (candidate) { return candidate.label !== 'C3'; });
+        var source = roots[0];
+        roots.forEach(function (candidate) {
+          if (Math.abs(candidate.midi - midi) < Math.abs(source.midi - midi)) source = candidate;
+        });
+        var semitones = midi - source.midi;
+        return { instrument: instrument, source: source, semitones: semitones, rate: Math.pow(2, semitones / 12) };
+      }
+      window.Abo21Core = { notesForOctave: notesForOctave, mapTarget: mapTarget, listInstruments: listInstruments, instrumentVolume: instrumentVolume, instrumentLayers: instrumentLayers, pianoCalibration: pianoCalibration, setPianoCalibration: setPianoCalibration, resetPianoCalibration: resetPianoCalibration };
+    })();
+  </script>
+  <script>
+    (function () {
+      var core = window.Abo21Core;
+      var state = { octave: 4, instrument: 'piano', active: {}, lastLabel: 'C4', lastPianoMidi: 60 };
+      var labels = ['do', 're', 'mi', 'fa', 'sol', 'la', 'xi'];
+      var keysEl = document.getElementById('keys');
+      var mapEl = document.getElementById('map');
+      var targetEl = document.getElementById('target');
+      var sourceEl = document.getElementById('source');
+      var shiftEl = document.getElementById('shift');
+      var instCycle = document.getElementById('instCycle');
+      var calTargetEl = document.getElementById('calTarget');
+      var calLayersEl = document.getElementById('calLayers');
+      var calVolumeEl = document.getElementById('calVolume');
+      var calVolumeValueEl = document.getElementById('calVolumeValue');
+      var calResetEl = document.getElementById('calReset');
+
+      function currentNotes() { return core.notesForOctave(state.octave); }
+      function renderKeys() {
+        keysEl.innerHTML = '';
+        currentNotes().forEach(function (note) {
+          var button = document.createElement('button');
+          button.className = 'key';
+          button.dataset.index = note.index;
+          button.innerHTML = '<span class="solfege">' + note.solfege + '</span><span class="pitch">' + note.label + '</span><kbd>' + (note.index + 1) + '</kbd>';
+          button.addEventListener('pointerdown', function (event) { event.preventDefault(); startNote(note, button); });
+          button.addEventListener('pointerup', function () { stopNote(note.label, button); });
+          button.addEventListener('pointerleave', function () { stopNote(note.label, button); });
+          keysEl.appendChild(button);
+        });
+      }
+      function renderMap() {
+        mapEl.innerHTML = '';
+        [3, 4, 5].forEach(function (octave) {
+          var group = document.createElement('div');
+          group.className = 'map-group';
+          group.innerHTML = '<h2>' + ['低', '中', '高'][octave - 3] + '音区 · C' + octave + '–B' + octave + '</h2>';
+          core.notesForOctave(octave).forEach(function (note) {
+            var mapped = core.mapTarget(state.instrument, note.midi);
+            var row = document.createElement('div');
+            row.className = 'map-row' + (note.label === state.lastLabel ? ' current' : '');
+            row.innerHTML = '<span>' + note.solfege + ' · ' + note.label + '</span><span>' + mapped.source.label + ' ' + (mapped.semitones >= 0 ? '+' : '') + mapped.semitones + ' st</span>';
+            group.appendChild(row);
+          });
+          mapEl.appendChild(group);
+        });
+      }
+      function updateReadout(note) {
+        var mapped = core.mapTarget(state.instrument, note.midi);
+        targetEl.textContent = note.label + ' · ' + note.solfege;
+        sourceEl.textContent = mapped.instrument.name + ' · ' + mapped.source.label;
+        var layers = core.instrumentLayers(state.instrument, note.midi);
+        var totalDb = Math.round(20 * Math.log10(layers * core.instrumentVolume(state.instrument, note.midi)) * 10) / 10;
+        shiftEl.textContent = (mapped.semitones >= 0 ? '+' : '') + mapped.semitones + ' 半音 · ×' + mapped.rate.toFixed(4) + (layers > 1 ? ' · ' + layers + ' 层试听（约 ' + (totalDb >= 0 ? '+' : '') + totalDb + ' dB）' : '');
+        state.lastLabel = note.label;
+        if (state.instrument === 'piano') state.lastPianoMidi = note.midi;
+        updateCalibrationControls();
+        renderMap();
+      }
+      function updateCalibrationControls() {
+        var enabled = state.instrument === 'piano';
+        var note = core.notesForOctave(Math.floor(state.lastPianoMidi / 12) - 1).filter(function (candidate) { return candidate.midi === state.lastPianoMidi; })[0];
+        var calibration = core.pianoCalibration(state.lastPianoMidi);
+        calTargetEl.textContent = note ? note.label + ' · ' + note.solfege : '—';
+        calLayersEl.value = calibration.layers;
+        calVolumeEl.value = calibration.volume;
+        calVolumeValueEl.textContent = Number(calibration.volume).toFixed(2);
+        calLayersEl.disabled = !enabled;
+        calVolumeEl.disabled = !enabled;
+        calResetEl.disabled = !enabled;
+      }
+      function saveCalibration() {
+        if (state.instrument !== 'piano') return;
+        core.setPianoCalibration(state.lastPianoMidi, calLayersEl.value, calVolumeEl.value);
+        updateCalibrationControls();
+      }
+      function startNote(note, button) {
+        if (state.active[note.label]) return;
+        var mapped = core.mapTarget(state.instrument, note.midi);
+        var voices = [];
+        for (var layer = 0; layer < core.instrumentLayers(state.instrument, note.midi); layer++) {
+          var audio = new Audio(mapped.source.url);
+          audio.preload = 'auto';
+          audio.playbackRate = mapped.rate;
+          audio.preservesPitch = false;
+          audio.volume = core.instrumentVolume(state.instrument, note.midi);
+          voices.push(audio);
+          audio.play().catch(function () { shiftEl.textContent += ' · 浏览器未允许读取本地音频'; });
+        }
+        state.active[note.label] = voices;
+        button.classList.add('active');
+        updateReadout(note);
+      }
+      function stopNote(label, button) {
+        var voices = state.active[label];
+        if (voices) { voices.forEach(function (audio) { audio.pause(); audio.currentTime = 0; }); delete state.active[label]; }
+        if (button) button.classList.remove('active');
+      }
+      function setOctave(octave) {
+        Object.keys(state.active).forEach(function (label) { stopNote(label); });
+        state.octave = octave;
+        document.querySelectorAll('.octave').forEach(function (button) { button.classList.toggle('selected', Number(button.dataset.octave) === octave); });
+        renderKeys();
+      }
+      function cycleInstrument() {
+        Object.keys(state.active).forEach(function (label) { stopNote(label); });
+        var instruments = core.listInstruments();
+        var index = instruments.map(function (instrument) { return instrument.id; }).indexOf(state.instrument);
+        state.instrument = instruments[(index + 1) % instruments.length].id;
+        instCycle.textContent = 'S8 · 当前乐器：' + instruments[(index + 1) % instruments.length].name + ' · 点击切换（8）';
+        updateCalibrationControls();
+        renderMap();
+      }
+      document.querySelectorAll('.octave').forEach(function (button) { button.addEventListener('click', function () { setOctave(Number(button.dataset.octave)); }); });
+      instCycle.addEventListener('click', cycleInstrument);
+      calLayersEl.addEventListener('change', saveCalibration);
+      calVolumeEl.addEventListener('input', saveCalibration);
+      calResetEl.addEventListener('click', function () { if (state.instrument === 'piano') { core.resetPianoCalibration(state.lastPianoMidi); updateCalibrationControls(); } });
+      document.addEventListener('keydown', function (event) {
+        if (event.repeat) return;
+        if (event.key === '8') { cycleInstrument(); return; }
+        if ({ q: 3, w: 4, e: 5 }[event.key.toLowerCase()]) { setOctave({ q: 3, w: 4, e: 5 }[event.key.toLowerCase()]); return; }
+        var index = Number(event.key) - 1;
+        if (index < 0 || index > 6) return;
+        var button = keysEl.children[index];
+        startNote(currentNotes()[index], button);
+      });
+      document.addEventListener('keyup', function (event) {
+        var index = Number(event.key) - 1;
+        if (index < 0 || index > 6) return;
+        var note = currentNotes()[index];
+        stopNote(note.label, keysEl.children[index]);
+      });
+      renderKeys();
+      updateCalibrationControls();
+      renderMap();
+    })();
+  </script>
+</body>
+</html>

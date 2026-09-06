@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>A Band of One · 单簧管源文件体检</title>
+  <style>
+    :root { color-scheme:dark; --bg:#11131a; --panel:#1b202c; --line:#3b4961; --accent:#78c3d7; --ink:#edf5f8; --muted:#aab7c5; --good:#78c98d; --warn:#f0c46b; --bad:#e3776c; }
+    * { box-sizing:border-box } body { margin:0; min-height:100vh; color:var(--ink); background:radial-gradient(circle at top,#223448,#11131a 62%); font:16px/1.5 system-ui,"Microsoft YaHei",sans-serif } main { width:min(1180px,calc(100% - 32px)); margin:auto; padding:40px 0 } h1 { margin:0 0 8px } p { margin:8px 0 } .lead,.muted { color:var(--muted) } .panel { margin-top:18px; padding:18px; border:1px solid var(--line); border-radius:16px; background:color-mix(in srgb,var(--panel) 92%,black) } button { border:1px solid #537087; border-radius:8px; background:#dbeaf0; color:#15212b; padding:10px 14px; font:600 15px system-ui,"Microsoft YaHei",sans-serif; cursor:pointer } button:hover { background:#9bd9e7 } button:disabled { opacity:.55; cursor:wait } table { width:100%; border-collapse:collapse; margin-top:12px; font-size:14px } th,td { padding:9px 8px; text-align:left; border-bottom:1px solid var(--line); white-space:nowrap } th { color:#b6e9f4 } .good { color:var(--good) } .warn { color:var(--warn) } .bad { color:var(--bad) } .scroll { overflow:auto } code { color:#a9e2ed } @media(max-width:650px) { main { width:min(100% - 20px,1180px); padding:24px 0 }.panel{padding:14px} table{font-size:12px}th,td{padding:7px 5px} }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>单簧管源文件体检</h1>
+    <p class="lead">逐枚读取本地 9 个 MP3：测量稳定段基频、相对标准音的 cents、峰值、RMS 与时长。只读分析，不改 MP3、不改固件。</p>
+    <section class="panel"><button id="run" type="button">开始分析 9 枚源文件</button><span id="status" class="muted"> 等待执行。</span><p class="muted">判读：cents 接近 0 表示调音接近标准；绝对值超过 35 cents 标为“偏音”。RMS 差异超过 10dB 标为“偏弱/偏强”。自动基频是辅助证据，需结合“原速试听”确认。</p></section>
+    <section class="panel scroll"><h2>源文件测量</h2><table><thead><tr><th>根音</th><th>原速</th><th>时长</th><th>峰值</th><th>RMS</th><th>基频</th><th>偏差</th><th>判读</th></tr></thead><tbody id="rows"></tbody></table></section>
+    <section class="panel"><h2>三个 xi 的追溯</h2><p>B3 ← A#3 +1 半音；B4 ← A#4 +1 半音；B5 ← A#5 +1 半音。源文件体检已正常后，用下面每组 A/B 确认浏览器上移 1 半音的实际听感。</p><div class="scroll"><table><thead><tr><th>xi 目标</th><th>源音</th><th>原速 A♯</th><th>上移后 B</th><th>理论频率</th></tr></thead><tbody id="xiRows"></tbody></table></div></section>
+    <footer class="muted">来源与哈希：<code>firmware/course-motherboard/abo_assets/incoming/tonejs-clarinet-probe/SOURCE.md</code></footer>
+  </main>
+  <script id="abo-clarinet-diagnose-core">
+    (function () {
+      var ROOTS = [['D3',50],['F3',53],['A#3',58],['D4',62],['F4',65],['A#4',70],['D5',74],['F5',77],['A#5',82]].map(function (entry) {
+        var file = entry[0].replace('#','s') + '.mp3';
+        return { note:entry[0], midi:entry[1], file:file, url:'../firmware/course-motherboard/abo_assets/incoming/tonejs-clarinet-probe/' + file };
+      });
+      var XI_CASES = [['B3','A#3'],['B4','A#4'],['B5','A#5']].map(function (entry) { return { target:entry[0], root:entry[1], rate:Math.pow(2,1/12) }; });
+      function expectedHz(note) {
+        var match = /^([A-G])(#?)([0-8])$/.exec(note), base = {C:0,D:2,E:4,F:5,G:7,A:9,B:11};
+        if (!match) throw new Error('unsupported note: ' + note);
+        var midi = (Number(match[3]) + 1) * 12 + base[match[1]] + (match[2] ? 1 : 0);
+        return 440 * Math.pow(2, (midi - 69) / 12);
+      }
+      function centsFromHz(actual, expected) { return 1200 * Math.log2(actual / expected); }
+      function estimateFundamental(samples, sampleRate, minHz, maxHz) {
+        var minLag = Math.floor(sampleRate / maxHz), maxLag = Math.ceil(sampleRate / minHz), usable = samples.length - maxLag;
+        if (usable < sampleRate / maxHz * 3) return NaN;
+        var bestLag = 0, bestScore = -Infinity, scores = {};
+        for (var lag = minLag; lag <= maxLag; lag++) {
+          var sum = 0, left = 0, right = 0;
+          for (var i = 0; i < usable; i += 2) { var a=samples[i], b=samples[i+lag]; sum += a*b; left += a*a; right += b*b; }
+          var score = sum / Math.sqrt(left * right || 1); scores[lag] = score;
+          if (score > bestScore) { bestScore = score; bestLag = lag; }
+        }
+        if (bestScore < 0.25) return NaN;
+        var before=scores[bestLag-1] || bestScore, center=bestScore, after=scores[bestLag+1] || bestScore;
+        var offset = (before - after) / (2 * (before - 2 * center + after) || 1);
+        return sampleRate / (bestLag + Math.max(-0.5, Math.min(0.5, offset)));
+      }
+      function level(samples) { var peak=0, energy=0; for (var i=0;i<samples.length;i++) { var value=Math.abs(samples[i]); peak=Math.max(peak,value); energy+=samples[i]*samples[i]; } return { peak:20*Math.log10(Math.max(peak,1e-8)), rms:20*Math.log10(Math.max(Math.sqrt(energy/samples.length),1e-8)) }; }
+      function analyzeBuffer(buffer, root) {
+        var data=buffer.getChannelData(0), start=Math.floor(Math.min(0.35,buffer.duration*0.18)*buffer.sampleRate), end=Math.min(data.length, start + Math.floor(Math.min(0.9,Math.max(0.35,buffer.duration*0.45))*buffer.sampleRate)), steady=data.slice(start,end), levels=level(data), expected=expectedHz(root.note), frequency=estimateFundamental(steady,buffer.sampleRate,expected/1.45,expected*1.45);
+        return { duration:buffer.duration, peak:levels.peak, rms:levels.rms, frequency:frequency, cents:Number.isFinite(frequency) ? centsFromHz(frequency,expected) : NaN };
+      }
+      window.AboClarinetDiagnoseCore={ ROOTS:ROOTS, XI_CASES:XI_CASES, expectedHz:expectedHz, centsFromHz:centsFromHz, estimateFundamental:estimateFundamental, analyzeBuffer:analyzeBuffer };
+    })();
+  </script>
+  <script>
+    (function () {
+      var core=window.AboClarinetDiagnoseCore, rows=document.getElementById('rows'), xiRows=document.getElementById('xiRows'), run=document.getElementById('run'), status=document.getElementById('status'), audio=null;
+      function db(value) { return Number.isFinite(value) ? value.toFixed(1)+' dBFS' : '—'; } function hz(value) { return Number.isFinite(value) ? value.toFixed(1)+' Hz' : '无法估计'; }
+      function play(root, rate) { if(audio){audio.pause();audio.currentTime=0;} audio=new Audio(root.url); audio.playbackRate=rate || 1; audio.play().catch(function(){ status.className='bad'; status.textContent='试听被浏览器拒绝。请直接再次点击该按钮。'; }); }
+      function assess(result, medianRms) { if(!Number.isFinite(result.cents)) return ['warn','基频不稳']; if(Math.abs(result.cents)>35) return ['bad','偏音']; if(Math.abs(result.rms-medianRms)>10) return ['warn',result.rms<medianRms?'偏弱':'偏强']; return ['good','正常']; }
+      function median(values) { var sorted=values.slice().sort(function(a,b){return a-b}), middle=Math.floor(sorted.length/2); return sorted.length%2?sorted[middle]:(sorted[middle-1]+sorted[middle])/2; }
+      core.XI_CASES.forEach(function(item) { var root=core.ROOTS.find(function(candidate){return candidate.note===item.root;}), row=document.createElement('tr'); row.innerHTML='<td>'+item.target+'</td><td>'+item.root+'</td><td><button type="button">原速 '+item.root+'</button></td><td><button type="button">上移 1 半音 → '+item.target+'</button></td><td>'+core.expectedHz(item.target).toFixed(1)+' Hz</td>'; var buttons=row.querySelectorAll('button'); buttons[0].addEventListener('click',function(){play(root,1);}); buttons[1].addEventListener('click',function(){play(root,item.rate);}); xiRows.appendChild(row); });
+      run.addEventListener('click', async function(){
+        run.disabled=true; rows.innerHTML=''; status.className='muted'; status.textContent='正在解码 9 枚 MP3…'; var AudioCtx=window.AudioContext||window.webkitAudioContext, context=new AudioCtx(), results=[];
+        try { for(var i=0;i<core.ROOTS.length;i++){ var root=core.ROOTS[i]; status.textContent='正在分析 '+root.note+'（'+(i+1)+'/9）…'; var response=await fetch(root.url); if(!response.ok) throw new Error(root.file+' HTTP '+response.status); var buffer=await context.decodeAudioData(await response.arrayBuffer()); results.push({root:root,result:core.analyzeBuffer(buffer,root)}); }
+          var medianRms=median(results.map(function(item){return item.result.rms;})); results.forEach(function(item){var r=item.result, verdict=assess(r,medianRms), row=document.createElement('tr'); row.innerHTML='<td>'+item.root.note+'</td><td><button type="button">试听</button></td><td>'+r.duration.toFixed(2)+' s</td><td>'+db(r.peak)+'</td><td>'+db(r.rms)+'</td><td>'+hz(r.frequency)+'</td><td class="'+verdict[0]+'">'+(Number.isFinite(r.cents)?(r.cents>0?'+':'')+r.cents.toFixed(1)+' cents':'—')+'</td><td class="'+verdict[0]+'">'+verdict[1]+'</td>'; row.querySelector('button').addEventListener('click',function(){play(item.root,1);}); rows.appendChild(row);}); status.className='good'; status.textContent='分析完成：请优先看 A#3 / A#4 / A#5 三行，并在下方 A/B 对照原速与上移后 B。';
+        } catch(error) { status.className='bad'; status.textContent='分析失败：'+error.message+'。请确认通过 http://127.0.0.1:8800 打开。'; } finally { run.disabled=false; if(context && context.close) context.close(); }
+      });
+    })();
+  </script>
+</body>
+</html>

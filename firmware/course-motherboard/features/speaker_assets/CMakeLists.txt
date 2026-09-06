@@ -1,0 +1,66 @@
+if(ABO_PRODUCT)
+  # The independent image embeds the mixed P1 bank: EIAD piano/violin roots
+  # and continuous PCM16LE clarinet roots. Do not carry the legacy WaytoAGI
+  # asset or its Wi-Fi / Flash synchronization graph into the product image.
+  idf_component_register(
+    SRCS
+      "abo_p1_sound_bank.cpp"
+      "sound_asset_reader.cpp"
+      "sound_asset_crypto.cpp"
+      "sound_asset_format.cpp"
+    INCLUDE_DIRS
+      "include"
+    REQUIRES
+      esp_partition
+    EMBED_FILES
+      "../../abo_assets/delivery/piano_b2.eiad"
+      "../../abo_assets/delivery/piano_fis3.eiad"
+      "../../abo_assets/delivery/piano_c4.eiad"
+      "../../abo_assets/delivery/piano_fis4.eiad"
+      "../../abo_assets/delivery/piano_c5.eiad"
+      "../../abo_assets/delivery/piano_fis5.eiad"
+      "../../abo_assets/delivery/piano_c6.eiad"
+      "../../abo_assets/delivery/violin_g3.eiad"
+      "../../abo_assets/delivery/violin_c4.eiad"
+      "../../abo_assets/delivery/violin_e4.eiad"
+      "../../abo_assets/delivery/violin_g4.eiad"
+      "../../abo_assets/delivery/violin_c5.eiad"
+      "../../abo_assets/delivery/violin_e5.eiad"
+      "../../abo_assets/delivery/violin_a5.eiad"
+      "../../abo_assets/delivery/clarinet_d3.pcm16le"
+      "../../abo_assets/delivery/clarinet_f3.pcm16le"
+      "../../abo_assets/delivery/clarinet_as3.pcm16le"
+      "../../abo_assets/delivery/clarinet_d4.pcm16le"
+      "../../abo_assets/delivery/clarinet_f4.pcm16le"
+      "../../abo_assets/delivery/clarinet_as4.pcm16le"
+      "../../abo_assets/delivery/clarinet_d5.pcm16le"
+      "../../abo_assets/delivery/clarinet_f5.pcm16le"
+      "../../abo_assets/delivery/clarinet_as5.pcm16le"
+  )
+else()
+  idf_component_register(
+    SRCS
+      "diagnostic_link_anchor.cpp"
+      "abo_p1_piano_sound.cpp"
+      "factory_boot_sound.cpp"
+      "speaker_assets_protocol.cpp"
+      "speaker_assets_flash_runner.cpp"
+      "speaker_assets_runtime.cpp"
+      "speaker_assets_session.cpp"
+      "speaker_assets_store_executor.cpp"
+      "speaker_assets_wifi_wire.cpp"
+      "sound_asset_reader.cpp"
+      "sound_asset_crypto.cpp"
+      "sound_asset_format.cpp"
+      "sound_asset_store.cpp"
+      "esp_sound_bank_storage.cpp"
+    INCLUDE_DIRS
+      "include"
+    REQUIRES
+      esp_partition
+    EMBED_FILES
+      "assets/waytoagi.eiad"
+      "../../abo_assets/delivery/piano_c4.eiad"
+    WHOLE_ARCHIVE
+  )
+endif()

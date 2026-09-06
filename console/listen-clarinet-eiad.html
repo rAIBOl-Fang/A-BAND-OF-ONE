@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>A Band of One · 单簧管 EIAD 试听</title>
+  <style>
+    :root { color-scheme: dark; font-family: system-ui, "Microsoft YaHei", sans-serif; background:#101522; color:#edf3ff; }
+    body { max-width:920px; margin:0 auto; padding:32px 18px 48px; }
+    h1 { margin:0 0 8px; } p { color:#b8c4d9; line-height:1.7; }
+    .notice { border-left:4px solid #eeb94a; background:#201c12; padding:12px 16px; border-radius:8px; }
+    .panel { background:#171e2d; border:1px solid #31405b; border-radius:16px; padding:18px; margin-top:20px; }
+    #roots { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; }
+    button { padding:14px 10px; border-radius:10px; border:1px solid #5e759d; background:#eaf2ff; color:#172239; font-size:16px; font-weight:700; cursor:pointer; }
+    button:hover, button.active { background:#92d7ee; } button:disabled { opacity:.5; cursor:wait; }
+    #stop { margin-top:14px; background:#38252b; border-color:#c86c75; color:#ffe9e9; }
+    code { color:#9be0ff; } #status { min-height:1.6em; color:#a9e7b8; }
+  </style>
+</head>
+<body>
+  <h1>单簧管 EIAD 预览试听</h1>
+  <p>此页播放的是已编码的 <code>.eiad</code>，不是原始 MP3 或 WAV。每次播放会循环 <code>0.42–0.76 秒</code> 区间；点击“停止”可提前结束。</p>
+  <p class="notice">请通过本地静态服务器访问：<code>http://127.0.0.1:8800/console/listen-clarinet-eiad.html</code>。直接双击 HTML 会被浏览器拦截读取本地 EIAD 文件。</p>
+  <section class="panel">
+    <h2>选择根音</h2>
+    <div id="roots" aria-label="单簧管根音"></div>
+    <button id="stop" type="button" disabled>停止播放</button>
+    <p id="status" role="status">正在读取预览清单…</p>
+  </section>
+
+  <script id="abo-eiad-listener-core">
+  (() => {
+    const STEPS = [7, 8, 9, 10, 11, 12, 13, 14, 16, 17, 19, 21, 23, 25, 28, 31, 34, 37, 41, 45, 50, 55, 60, 66, 73, 80, 88, 97, 107, 118, 130, 143, 157, 173, 190, 209, 230, 253, 279, 307, 337, 371, 408, 449, 494, 544, 598, 658, 724, 796, 876, 963, 1060, 1166, 1282, 1411, 1552, 1707, 1878, 2066, 2272, 2499, 2749, 3024, 3327, 3660, 4026, 4428, 4871, 5358, 5894, 6484, 7132, 7845, 8630, 9493, 10442, 11487, 12635, 13899, 15289, 16818, 18500, 20350, 22385, 24623, 27086, 29794, 32767];
+    const INDEX = [-1, -1, -1, -1, 2, 4, 6, 8, -1, -1, -1, -1, 2, 4, 6, 8];
+
+    function decodeNibble(code, state) {
+      const step = STEPS[state.index];
+      let delta = step >> 3;
+      if (code & 4) delta += step;
+      if (code & 2) delta += step >> 1;
+      if (code & 1) delta += step >> 2;
+      state.predictor = Math.max(-32768, Math.min(32767, state.predictor + ((code & 8) ? -delta : delta)));
+      state.index = Math.max(0, Math.min(88, state.index + INDEX[code]));
+      return state.predictor;
+    }
+
+    function decodeEiad(arrayBuffer) {
+      const view = new DataView(arrayBuffer);
+      if (view.byteLength < 20 || String.fromCharCode(...new Uint8Array(arrayBuffer, 0, 4)) !== 'EIAD') throw new Error('不是 EIAD 文件');
+      if (view.getUint8(4) !== 1 || view.getUint8(5) !== 1) throw new Error('仅支持 EIAD-v1 单声道文件');
+      const sampleRate = view.getUint32(6, true);
+      const frameCount = view.getUint16(12, true);
+      const totalSamples = view.getUint32(14, true);
+      const samples = new Int16Array(totalSamples);
+      let cursor = 20, written = 0, firstPredictor = 0;
+      for (let frame = 0; frame < frameCount; frame += 1) {
+        if (cursor + 6 > view.byteLength) throw new Error('EIAD 帧头截断');
+        const count = view.getUint16(cursor, true);
+        const predictor = view.getInt16(cursor + 2, true);
+        cursor += 6;
+        if (!count || written + count > totalSamples) throw new Error('EIAD 帧采样数无效');
+        if (!written) firstPredictor = predictor;
+        samples[written++] = predictor;
+        const state = { predictor, index: 0 };
+        const packedBytes = Math.ceil((count - 1) / 2);
+        if (cursor + packedBytes > view.byteLength) throw new Error('EIAD 帧数据截断');
+        for (let position = 1; position < count; position += 2) {
+          const packed = view.getUint8(cursor++);
+          samples[written++] = decodeNibble(packed & 15, state);
+          if (position + 1 < count) samples[written++] = decodeNibble(packed >> 4, state);
+        }
+      }
+      if (written !== totalSamples || cursor !== view.byteLength) throw new Error('EIAD 长度不匹配');
+      return { sampleRate, samples, firstPredictor };
+    }
+
+    window.AboEiadListenerCore = { decodeEiad };
+  })();
+  </script>
+  <script>
+  (() => {
+    const BUNDLE = '../firmware/course-motherboard/abo_assets/delivery/clarinet-tonejs-preview/';
+    const { decodeEiad } = window.AboEiadListenerCore;
+    const roots = document.querySelector('#roots');
+    const status = document.querySelector('#status');
+    const stop = document.querySelector('#stop');
+    let manifest, audioContext, activeSource;
+
+    function stopActive() {
+      if (activeSource) { activeSource.stop(); activeSource = null; }
+      stop.disabled = true;
+      roots.querySelectorAll('button').forEach((button) => button.classList.remove('active'));
+    }
+
+    async function play(asset, button) {
+      stopActive();
+      status.textContent = `正在解码 ${asset.root_note}…`;
+      const response = await fetch(BUNDLE + asset.file);
+      if (!response.ok) throw new Error(`无法读取 ${asset.file}（HTTP ${response.status}）`);
+      const decoded = decodeEiad(await response.arrayBuffer());
+      audioContext ??= new AudioContext();
+      const buffer = audioContext.createBuffer(1, decoded.samples.length, decoded.sampleRate);
+      const channel = buffer.getChannelData(0);
+      for (let index = 0; index < decoded.samples.length; index += 1) channel[index] = decoded.samples[index] / 32768;
+      const source = audioContext.createBufferSource();
+      source.buffer = buffer;
+      source.loop = true;
+      source.loopStart = asset.loop_start_sample / decoded.sampleRate;
+      source.loopEnd = asset.loop_end_sample / decoded.sampleRate;
+      source.connect(audioContext.destination);
+      source.addEventListener('ended', () => { if (activeSource === source) stopActive(); });
+      activeSource = source;
+      source.start();
+      button.classList.add('active');
+      stop.disabled = false;
+      status.textContent = `${asset.root_note}：EIAD 已解码；正循环试听 ${source.loopStart.toFixed(2)}–${source.loopEnd.toFixed(2)} 秒。`;
+    }
+
+    (async () => {
+      try {
+        const response = await fetch(BUNDLE + 'manifest.json');
+        if (!response.ok) throw new Error(`无法读取 manifest.json（HTTP ${response.status}）`);
+        manifest = await response.json();
+        for (const asset of manifest.assets) {
+          const button = document.createElement('button');
+          button.type = 'button';
+          button.textContent = `${asset.root_note}（${asset.id.replace('clarinet_', '')}）`;
+          button.addEventListener('click', () => play(asset, button).catch((error) => { stopActive(); status.textContent = `失败：${error.message}`; }));
+          roots.append(button);
+        }
+        stop.addEventListener('click', () => { stopActive(); status.textContent = '已停止。'; });
+        status.textContent = `已载入 ${manifest.assets.length} 枚 EIAD 根音；点击任一按钮开始。`;
+      } catch (error) { status.textContent = `无法初始化试听页：${error.message}`; }
+    })();
+  })();
+  </script>
+</body>
+</html>
