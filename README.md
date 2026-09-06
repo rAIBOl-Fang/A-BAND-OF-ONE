@@ -158,7 +158,7 @@ node console/index.test.mjs
 | `easyinput-board-cy` | [GitHub](https://github.com/CY-CHENYUE/easyinput-board-cy) | EasyInput 板型、GPIO、按键、BOOT、电源、USB、音频事实和安全边界。 |
 | `esp-idf-cy` | [GitHub](https://github.com/CY-CHENYUE/esp-idf-cy) | ESP-IDF 环境检查、固件编译、设备识别；烧录与串口操作必须在确认后执行。 |
 | `easy-input-maker` | [GitHub](https://github.com/CY-CHENYUE/easy-input-maker) | EasyInput Maker 完整固件工程；是本项目复用已验证 GPIO8、按键、旋钮、LED、I2S/音频和分区边界的平台层来源。 |
-| Zhaohan-Wang老师的参考项目（来源） | [easyinput-beatbox](https://github.com/Zhaohan-Wang/easyinput-beatbox) | Zhaohan-Wang老师的公开项目；参考“先独立出声，再建立时间轴，最后接入网页控制台”的阶段组织方式，不复制其代码。 |
+| Zhaohan-Wang老师的项目（来源） | [easyinput-beatbox](https://github.com/Zhaohan-Wang/easyinput-beatbox) | Zhaohan-Wang老师的公开项目；参考“先独立出声，再建立时间轴，最后接入网页控制台”的阶段组织方式，不复制其代码。 |
 
 ## 软件框架与 API 来源
 
