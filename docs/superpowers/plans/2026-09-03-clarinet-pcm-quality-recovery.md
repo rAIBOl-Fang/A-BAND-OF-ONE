@@ -10,7 +10,7 @@
 
 **Tech Stack:** ESP-IDF 5.5.5、ESP32-S3、C++17、48kHz PCM16LE、EIAD/IMA-ADPCM、PSRAM、I2S DMA、Python 标准库、Node.js 单文件网页测试、CMake/CTest。
 
-**Spec:** `docs/技术方案.md` §3.3--§3.7、`flow/踩坑记录.md` 顶部单簧管条目、`console/diagnose-clarinet-hil.html` 四路径听测结果；路径④唯一来源为 `firmware/course-motherboard/abo_assets/delivery/clarinet-tonejs-preview/manifest.json`，不得改用 `clarinet-tonejs-high-ab-preview`。
+**Spec:** `docs/技术方案.md` §3.3--§3.7、`flow/踩坑记录.md` 顶部单簧管条目和历史内部四路径听测结果（不随当前公开快照发布）；路径④唯一来源为正式资产清单，当前公开版以 `firmware/course-motherboard/abo_assets/delivery/manifest.json` 为准。
 
 ## Investigation Findings
 
@@ -38,7 +38,7 @@
 - `firmware/course-motherboard/abo_assets/tools/prepare_clarinet_pcm_preview.py`：只生成独立 PCM 听测候选，不碰正式 delivery manifest。
 - `firmware/course-motherboard/abo_assets/tests/test_clarinet_pcm_preview.py`：固定九根音、处理参数、循环点、样本数、哈希与 PCM 字节数。
 - `firmware/course-motherboard/abo_assets/delivery/clarinet-tonejs-pcm-preview/`：独立候选包；包含 9 枚 WAV、manifest 与归属文件。
-- `console/listen-clarinet-pcm-ab.html` / `.test.mjs`：同根音比较“处理后 PCM 单次/循环”和“④ EIAD 单次/循环”。
+- 浏览器 A/B 听测页（历史内部产物，不随当前公开快照发布）：同根音比较“处理后 PCM 单次/循环”和“④ EIAD 单次/循环”。
 - `firmware/course-motherboard/abo_assets/tools/prepare_p1_assets.py`：通过听测后才把正式单簧管输出改为 `.pcm16le`。
 - `firmware/course-motherboard/abo_assets/tests/test_p1_asset_manifest.py`：允许钢琴/小提琴 EIAD + 单簧管 PCM16LE，固定新预算。
 - `firmware/course-motherboard/features/speaker_assets/include/speaker_assets/abo_p1_sound_bank.h`：为根音资产增加明确的存储类型和通用 payload 字段。
@@ -89,8 +89,7 @@
 - Create: `firmware/course-motherboard/abo_assets/tools/prepare_clarinet_pcm_preview.py`
 - Create: `firmware/course-motherboard/abo_assets/tests/test_clarinet_pcm_preview.py`
 - Create: `firmware/course-motherboard/abo_assets/delivery/clarinet-tonejs-pcm-preview/manifest.json`
-- Create: `console/listen-clarinet-pcm-ab.html`
-- Create: `console/listen-clarinet-pcm-ab.test.mjs`
+- Create（历史内部产物，不随当前公开快照发布）：浏览器 PCM/④ EIAD A/B 听测页及其测试。
 
 **Interfaces:**
 - Consumes: 9 枚 `raw/clarinet-tonejs/*.wav`、④清单中的逐根音循环终点。
@@ -124,9 +123,8 @@
 
   ```powershell
   & 'C:\esp\v5.5.5\esp-idf\python_env\idf5.5_env\Scripts\python.exe' firmware/course-motherboard/abo_assets/tests/test_clarinet_pcm_preview.py
-  node console/listen-clarinet-pcm-ab.test.mjs
-  node console/diagnose-clarinet-hil.test.mjs
-  node console/listen-clarinet-eiad.test.mjs
+  （历史浏览器 A/B 听测测试不纳入当前公开快照；正式资产以 `delivery/manifest.json` 为准。）
+  # 历史内部试听测试不随当前公开快照运行；公开版以 delivery/manifest.json 为准。
   ```
 
   Expected: 全部 PASS；现有④资产哈希不变。
