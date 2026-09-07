@@ -6,11 +6,9 @@
 
 ## 项目介绍视频
 
-https://github.com/rAIBOl-Fang/A-BAND-OF-ONE/raw/refs/heads/main/A-BAND-OF-ONE_%E8%AE%B2%E8%A7%A3%E7%89%88_v2-processed.mp4
+![](https://github.com/user-attachments/assets/bdb58f76-8d32-4dc7-a03a-e7758daee266)
 
-处理后视频已放在仓库根目录，约 8 MB，便于 GitHub 页面和其他电脑访问；原始视频仍保留在本地宣传视频目录。
-
-[备用：打开或下载视频文件](A-BAND-OF-ONE_讲解版_v2-processed.mp4)
+处理后视频通过 GitHub 媒体附件直接播放，大小约 8 MB；18.7 MB 源文件保留在 [`docs/assets/video/`](docs/assets/video/)。
 
 ## 网页界面预览
 
