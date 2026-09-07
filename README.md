@@ -6,7 +6,7 @@
 
 ## 项目介绍视频
 
-![](https://github.com/user-attachments/assets/bdb58f76-8d32-4dc7-a03a-e7758daee266)
+https://github.com/user-attachments/assets/bdb58f76-8d32-4dc7-a03a-e7758daee266
 
 处理后视频通过 GitHub 媒体附件直接播放，大小约 8 MB；18.7 MB 源文件保留在 [`docs/assets/video/`](docs/assets/video/)。
 
