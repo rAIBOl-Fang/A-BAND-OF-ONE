@@ -23,6 +23,17 @@
 
 界面同时呈现谱面、8 个实体控制、S9 旋钮、D1–D5 灯光状态、连接状态、音区、错误数、用时和音量反馈。截图位于 [`docs/assets/screenshots/`](docs/assets/screenshots/)。
 
+## 项目介绍视频
+
+<video controls preload="metadata" width="100%">
+  <source src="docs/assets/video/A-BAND-OF-ONE_讲解版_v2.mp4" type="video/mp4">
+  您的浏览器不支持内嵌视频，请使用下面的链接打开视频文件。
+</video>
+
+[打开或下载《A Band of One》讲解版 v2（MP4）](docs/assets/video/A-BAND-OF-ONE_讲解版_v2.mp4)
+
+视频文件位于 [`docs/assets/video/`](docs/assets/video/)，保留在仓库中，便于其他用户克隆项目后离线查看。
+
 ## 项目是什么
 
 A Band of One 不是把按键事件转发给电脑后才发声的键盘，也不是只在浏览器里运行的音乐小游戏。断开电脑后，ESP32-S3 仍负责按键扫描、音频渲染、严格拍长和灯光状态；连接电脑后，浏览器成为乐谱和演奏状态的可视化控制台。
