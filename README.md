@@ -4,6 +4,14 @@
 
 > 板端负责时间、声音和判定；网页负责看见、装载和控制。
 
+## 项目介绍视频
+
+https://github.com/rAIBOl-Fang/A-BAND-OF-ONE/raw/refs/heads/main/A-BAND-OF-ONE_%E8%AE%B2%E8%A7%A3%E7%89%88_v2-processed.mp4
+
+处理后视频已放在仓库根目录，约 8 MB，便于 GitHub 页面和其他电脑访问；原始视频仍保留在本地宣传视频目录。
+
+[备用：打开或下载视频文件](A-BAND-OF-ONE_讲解版_v2-processed.mp4)
+
 ## 网页界面预览
 
 下面是当前网页的三个主要页面：跟谱练习、自由演奏、乐谱库与导入。
@@ -22,12 +30,6 @@
 </table>
 
 界面同时呈现谱面、8 个实体控制、S9 旋钮、D1–D5 灯光状态、连接状态、音区、错误数、用时和音量反馈。截图位于 [`docs/assets/screenshots/`](docs/assets/screenshots/)。
-
-## 项目介绍视频
-
-[▶ 打开或下载《A Band of One》讲解版 v2（MP4）](docs/assets/video/A-BAND-OF-ONE_讲解版_v2.mp4)
-
-视频文件位于 [`docs/assets/video/`](docs/assets/video/)，保留在仓库中，便于其他用户克隆项目后离线查看。
 
 ## 项目是什么
 
