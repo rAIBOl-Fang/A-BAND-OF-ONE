@@ -25,12 +25,7 @@
 
 ## 项目介绍视频
 
-<video controls preload="metadata" width="100%">
-  <source src="docs/assets/video/A-BAND-OF-ONE_讲解版_v2.mp4" type="video/mp4">
-  您的浏览器不支持内嵌视频，请使用下面的链接打开视频文件。
-</video>
-
-[打开或下载《A Band of One》讲解版 v2（MP4）](docs/assets/video/A-BAND-OF-ONE_讲解版_v2.mp4)
+[▶ 打开或下载《A Band of One》讲解版 v2（MP4）](docs/assets/video/A-BAND-OF-ONE_讲解版_v2.mp4)
 
 视频文件位于 [`docs/assets/video/`](docs/assets/video/)，保留在仓库中，便于其他用户克隆项目后离线查看。
 
