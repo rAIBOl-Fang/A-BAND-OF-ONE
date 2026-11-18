@@ -10,6 +10,12 @@ https://github.com/user-attachments/assets/bdb58f76-8d32-4dc7-a03a-e7758daee266
 
 处理后视频通过 GitHub 媒体附件直接播放，大小约 8 MB；18.7 MB 源文件保留在 [`docs/assets/video/`](docs/assets/video/)。
 
+## 使用讲解视频
+
+https://github.com/user-attachments/assets/204743ac-09b2-44cc-9520-9765691d00c6
+
+演示键盘连接、乐谱装载与自由演奏操作。时长约 1 分 43 秒，1080p，播放副本约 8.72 MB。
+
 ## 网页界面预览
 
 下面是当前网页的三个主要页面：跟谱练习、自由演奏、乐谱库与导入。
